@@ -4,9 +4,7 @@
     <%- include("./partials/head") %>
     <title>Sign In - Blogify</title>
     <style>
-        .card {
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
+        .card { box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -14,51 +12,43 @@
 
     <div class="container d-flex justify-content-center align-items-center" style="min-height: 85vh;">
         <div class="card p-4" style="width: 100%; max-width: 460px;">
-            <h3 class="text-center mb-4">Welcome Back</h3>
+            <h3 class="text-center mb-4">Sign In</h3>
 
-            <% if (typeof error !== 'undefined' && error) { %>
-                <div class="alert alert-danger text-center">
-                    <%= error %>
+            <form id="signinForm">
+                <div class="mb-3">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="fullName" class="form-control" required>
                 </div>
-            <% } %>
-
-            <form action="/user/signin" method="POST" id="signinForm">
                 <div class="mb-3">
                     <label class="form-label">Email Address</label>
-                    <input 
-                        type="email" 
-                        name="email" 
-                        class="form-control" 
-                        placeholder="Enter your email"
-                        required>
+                    <input type="email" id="email" class="form-control" required>
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label">Password</label>
-                    <input 
-                        type="password" 
-                        name="password" 
-                        class="form-control" 
-                        placeholder="Enter your password"
-                        required>
+                    <input type="password" id="password" class="form-control" minlength="6" required>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 mb-3">
-                    Sign In
+                <button type="button" id="sendOtpBtn" class="btn btn-primary w-100 mb-3">
+                    Send OTP
                 </button>
+
+                <div id="otpSection" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Enter OTP</label>
+                        <input type="text" id="otp" class="form-control" maxlength="6" placeholder="123456" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Verify OTP & Login</button>
+                </div>
             </form>
 
-            <div class="text-center">
-                <p>
-                    Don't have an account? 
-                    <a href="/user/signup" class="text-decoration-none">Sign Up</a>
-                </p>
-                <p>
-                    <a href="#" id="forgotPasswordLink" class="text-danger text-decoration-none">
-                        Forgot Password?
-                    </a>
-                </p>
-            </div>
+            <p class="text-center mt-3">
+                Don't have an account? <a href="/user/signup">Sign Up</a>
+            </p>
+            <p class="text-center">
+                <a href="#" id="forgotPasswordLink" class="text-danger">Forgot Password?</a>
+            </p>
+
+            <div id="message"></div>
         </div>
     </div>
 
@@ -71,7 +61,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="email" id="resetEmail" class="form-control" placeholder="Enter your registered email" required>
+                    <input type="email" id="resetEmail" class="form-control" placeholder="Enter your email">
                     <div id="forgotMessage" class="mt-3"></div>
                 </div>
                 <div class="modal-footer">
@@ -83,43 +73,105 @@
     </div>
 
     <script>
-        // Forgot Password Modal
+        const form = document.getElementById('signinForm');
+        const sendOtpBtn = document.getElementById('sendOtpBtn');
+        const otpSection = document.getElementById('otpSection');
+        const messageDiv = document.getElementById('message');
+
+        sendOtpBtn.addEventListener('click', async () => {
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!fullName || !email || !password) {
+                return showMessage("All fields are required", "danger");
+            }
+
+            sendOtpBtn.disabled = true;
+            sendOtpBtn.textContent = "Sending OTP...";
+
+            try {
+                const res = await fetch('/user/signin/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullName, email, password })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    if (data.alreadyLoggedIn) {
+                        showMessage("Login successful! Redirecting...", "success");
+                        setTimeout(() => window.location.href = "/", 1500);
+                    } else {
+                        showMessage(data.message, "success");
+                        otpSection.style.display = "block";
+                        sendOtpBtn.style.display = "none";
+                    }
+                } else {
+                    showMessage(data.message, "danger");
+                }
+            } catch (err) {
+                showMessage("Something went wrong", "danger");
+            } finally {
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.textContent = "Send OTP";
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const otp = document.getElementById('otp').value.trim();
+
+            try {
+                const res = await fetch('/user/signin/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    showMessage("Login successful! Redirecting...", "success");
+                    // Set cookie and redirect
+                    document.cookie = `token=${data.token}; path=/`;
+                    setTimeout(() => window.location.href = "/", 1200);
+                } else {
+                    showMessage(data.message, "danger");
+                }
+            } catch (err) {
+                showMessage("Verification failed", "danger");
+            }
+        });
+
+        function showMessage(msg, type) {
+            messageDiv.innerHTML = `<div class="alert alert-${type} text-center">${msg}</div>`;
+        }
+
+        // Forgot Password Modal (same)
         document.getElementById('forgotPasswordLink').addEventListener('click', () => {
             new bootstrap.Modal(document.getElementById('forgotModal')).show();
         });
 
-        // Send Reset Link
         document.getElementById('sendResetBtn').addEventListener('click', async () => {
             const email = document.getElementById('resetEmail').value.trim();
-            const messageDiv = document.getElementById('forgotMessage');
+            const msgDiv = document.getElementById('forgotMessage');
+            if (!email) return msgDiv.innerHTML = `<div class="alert alert-danger">Enter email</div>`;
+
             const btn = document.getElementById('sendResetBtn');
+            btn.disabled = true; btn.textContent = "Sending...";
 
-            if (!email) {
-                messageDiv.innerHTML = `<div class="alert alert-danger">Please enter your email</div>`;
-                return;
-            }
+            const res = await fetch('/user/forgot-password', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email})
+            });
+            const data = await res.json();
+            msgDiv.innerHTML = `<div class="alert alert-${data.success?'success':'danger'}">${data.message}</div>`;
 
-            btn.disabled = true;
-            btn.innerHTML = 'Sending...';
-
-            try {
-                const res = await fetch('/user/forgot-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-
-                const data = await res.json();
-                messageDiv.innerHTML = `
-                    <div class="alert alert-${data.success ? 'success' : 'danger'}">
-                        ${data.message}
-                    </div>`;
-            } catch (err) {
-                messageDiv.innerHTML = `<div class="alert alert-danger">Something went wrong. Try again.</div>`;
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'Send Reset Link';
-            }
+            btn.disabled = false; btn.textContent = "Send Reset Link";
         });
     </script>
 
