@@ -4,8 +4,8 @@ WORKDIR /app
 
 COPY package*.json ./
 
-# Install all dependencies (including multer-storage-cloudinary)
-RUN npm install --production
+# Fix for peer dependency conflict
+RUN npm install --production --legacy-peer-deps
 
 COPY . .
 
