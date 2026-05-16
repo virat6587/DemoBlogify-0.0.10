@@ -14,6 +14,31 @@ router.get("/add-new", (req, res) => {
     });
 });
 
+// GET: View single blog by ID
+router.get("/:id", async (req, res) => {
+    try {
+        const blog = await Blog.findById(req.params.id).populate("createdBy", "fullName email profileImageURL");
+        
+        if (!blog) {
+            return res.status(404).render("404", {
+                user: req.user,
+                message: "Blog not found"
+            });
+        }
+
+        return res.render("view", {
+            user: req.user,
+            blog: blog
+        });
+    } catch (error) {
+        console.error("Error fetching blog:", error);
+        return res.status(500).render("500", {
+            user: req.user,
+            message: "Error loading blog"
+        });
+    }
+});
+
 // POST: Create blog with Cloudinary image (requires authentication)
 router.post("/", cloudinaryUpload.single("coverImage"), async (req, res) => {
     const { title, body } = req.body;

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include("./partials/head") %>
+    <title><%= blog.title %> | Blogify</title>
+    <style>
+        body {
+            background-color: #0b0c10 !important;
+            color: #f1f1f1;
+        }
+        .blog-header {
+            background: linear-gradient(135deg, #669eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            margin-bottom: 40px;
+        }
+        .blog-cover {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        .blog-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .blog-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #22252a;
+        }
+        .author-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #3b82f6;
+        }
+        .author-info {
+            flex: 1;
+        }
+        .author-name {
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0;
+        }
+        .blog-date {
+            font-size: 0.9rem;
+            color: #a0aec0;
+            margin: 0;
+        }
+        .blog-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 20px 0;
+            line-height: 1.3;
+            color: #ffffff;
+        }
+        .blog-body {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #d1d5db;
+            margin: 30px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .back-btn:hover {
+            background-color: #2563eb;
+            text-decoration: none;
+            color: white;
+        }
+        .blog-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #22252a;
+        }
+    </style>
+</head>
+<body>
+    <%- include("./partials/nave") %>
+
+    <header class="blog-header">
+        <div class="container">
+            <h1 class="display-5 fw-bold"><%= blog.title %></h1>
+        </div>
+    </header>
+
+    <main class="blog-container mb-5 px-3">
+        <a href="/" class="back-btn">← Back to Home</a>
+
+        <!-- Blog Cover Image -->
+        <% if (blog.coverImageURL) { %>
+            <img 
+                src="<%= blog.coverImageURL %>" 
+                alt="<%= blog.title %>" 
+                class="blog-cover"
+                onerror="this.src='/images/default-blog.png';"
+            >
+        <% } %>
+
+        <!-- Blog Meta Information -->
+        <div class="blog-meta">
+            <% if (blog.createdBy) { %>
+                <img 
+                    src="<%= blog.createdBy.profileImageURL %>" 
+                    alt="<%= blog.createdBy.fullName %>" 
+                    class="author-avatar"
+                    onerror="this.src='/imgs/default.png';"
+                >
+                <div class="author-info">
+                    <p class="author-name"><%= blog.createdBy.fullName %></p>
+                    <p class="blog-date">
+                        <%= new Date(blog.createdAt).toLocaleDateString('en-US', { 
+                            month: 'long', 
+                            day: 'numeric', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) %>
+                    </p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Blog Content -->
+        <article class="blog-body">
+            <%= blog.body %>
+        </article>
+
+        <!-- Blog Footer -->
+        <div class="blog-footer">
+            <p class="text-muted text-center">
+                <small>Published by <strong><%= blog.createdBy ? blog.createdBy.fullName : 'Anonymous' %></strong> on <%= new Date(blog.createdAt).toLocaleDateString() %></small>
+            </p>
+        </div>
+    </main>
+
+    <%- include("./partials/scripts") %>
+</body>
+</html>
