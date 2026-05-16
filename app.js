@@ -53,4 +53,4 @@ app.listen(PORT, () => {
     console.log(`Server started at http://localhost:${PORT}`);
 });
 
-module.exports = app.js
+module.exports = app;
