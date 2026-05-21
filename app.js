@@ -15,18 +15,19 @@ const PORT = process.env.PORT || 8000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-    console.error("❌ MONGODB_URI is not set in Environment Variables!");
-    console.error("Please add it in Render Dashboard → Environment");
+    console.error("❌ MONGODB_URI is missing!");
 } else {
+    console.log("🔗 Attempting to connect to MongoDB Atlas...");
     mongoose.connect(MONGODB_URI, {
-        serverSelectionTimeoutMS: 20000,
-        socketTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 60000,
+        family: 4
     })
     .then(() => console.log("✅ MongoDB Connected Successfully"))
-    .catch((err) => console.error("❌ MongoDB Connection Error:", err.message));
+    .catch((err) => console.error("❌ MongoDB Connection Failed:", err.message));
 }
 
-// ====================== Middleware ======================
+// ====================== App Setup ======================
 app.set("view engine", "ejs");
 app.set("views", path.resolve("./views"));
 
@@ -37,14 +38,10 @@ app.use(express.static(path.resolve("./public")));
 
 app.use(checkForAuthenticationCookie("token"));
 
-// ====================== Routes ======================
-app.get("/health", (req, res) => res.status(200).send("OK"));
-
 // Home Route
 app.get("/", async (req, res) => {
     try {
         const Blog = require("./models/Blog");
-        
         const allBlogs = await Blog.find({})
             .sort({ createdAt: -1 })
             .populate("createdBy", "fullName profileImageURL")
@@ -66,3 +63,4 @@ app.use("/blogs", BlogRoute);
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
+
