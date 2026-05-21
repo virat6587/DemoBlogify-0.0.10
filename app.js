@@ -11,23 +11,28 @@ const { checkForAuthenticationCookie } = require("./middlewares/authentication")
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+// Load dotenv only in development
+if (process.env.NODE_ENV !== "production") {
+    require("dotenv").config();
+}
+
 // ====================== MongoDB Connection ======================
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
     console.error("❌ MONGODB_URI is missing!");
 } else {
-    console.log("🔗 Attempting to connect to MongoDB Atlas...");
+    console.log("🔗 Connecting to MongoDB Atlas...");
     mongoose.connect(MONGODB_URI, {
         serverSelectionTimeoutMS: 30000,
         socketTimeoutMS: 60000,
         family: 4
     })
     .then(() => console.log("✅ MongoDB Connected Successfully"))
-    .catch((err) => console.error("❌ MongoDB Connection Failed:", err.message));
+    .catch((err) => console.error("❌ MongoDB Error:", err.message));
 }
 
-// ====================== App Setup ======================
+// ====================== Middleware ======================
 app.set("view engine", "ejs");
 app.set("views", path.resolve("./views"));
 
@@ -63,4 +68,3 @@ app.use("/blogs", BlogRoute);
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
-
