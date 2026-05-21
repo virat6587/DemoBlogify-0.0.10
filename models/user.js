@@ -13,9 +13,8 @@ const UserSchema = new Schema({
     role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
 }, { timestamps: true });
 
-// ====================== PRE SAVE MIDDLEWARE (Password Hashing) ======================
-UserSchema.pre("save", function (next) {
-    // Skip hashing if password is not present or not modified (Google users)
+// ====================== PASSWORD HASHING ======================
+UserSchema.pre("save", function (next) {          // ← NO "async" here
     if (!this.password || !this.isModified("password") || this.googleId) {
         return next();
     }
@@ -28,11 +27,10 @@ UserSchema.pre("save", function (next) {
 
         this.salt = salt;
         this.password = hashedPassword;
-
-        return next();
+        next();
     } catch (error) {
         console.error("Password Hashing Error:", error);
-        return next(error);
+        next(error);
     }
 });
 
@@ -58,14 +56,12 @@ UserSchema.static("findOrCreateGoogleUser", async function (profile) {
         user = await this.findOne({ email: profile.emails[0].value });
 
         if (user) {
-            // Link existing account with Google
             user.googleId = profile.id;
             if (profile.photos?.[0]?.value) {
                 user.profileImageURL = profile.photos[0].value;
             }
             await user.save();
         } else {
-            // Create new user
             user = await this.create({
                 fullName: profile.displayName,
                 email: profile.emails[0].value,
