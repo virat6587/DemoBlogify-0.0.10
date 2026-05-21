@@ -13,20 +13,29 @@ const UserSchema = new Schema({
     role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
 }, { timestamps: true });
 
-// Password hashing (only for email/password users)
-UserSchema.pre("save", async function (next) {
-    if (!this.isModified("password") || !this.password) return next();
+// ====================== PASSWORD HASHING MIDDLEWARE ======================
+UserSchema.pre("save", function (next) {
+    // Skip if password is not modified or if it's a Google user
+    if (!this.isModified("password") || !this.password || this.googleId) {
+        return next();
+    }
 
-    const salt = randomBytes(16).toString("hex");
-    const hashedPassword = createHmac("sha256", salt)
-        .update(this.password)
-        .digest("hex");
+    try {
+        const salt = randomBytes(16).toString("hex");
+        const hashedPassword = createHmac("sha256", salt)
+            .update(this.password)
+            .digest("hex");
 
-    this.salt = salt;
-    this.password = hashedPassword;
-    next();
+        this.salt = salt;
+        this.password = hashedPassword;
+        next();
+    } catch (error) {
+        console.error("Password Hashing Error:", error);
+        next(error);   // Pass error to next()
+    }
 });
 
+// ====================== STATIC METHODS ======================
 UserSchema.static('matchPassword', async function (email, password) {
     const user = await this.findOne({ email });
     if (!user) throw new Error("User not found");
@@ -41,7 +50,6 @@ UserSchema.static('matchPassword', async function (email, password) {
     return creatTokenForUser(user);
 });
 
-// Google User Handler
 UserSchema.static('findOrCreateGoogleUser', async function (profile) {
     let user = await this.findOne({ googleId: profile.id });
 
