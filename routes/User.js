@@ -5,7 +5,7 @@ const { creatTokenForUser } = require("../services/authentication");
 
 const router = Router();
 
-// ====================== REGISTER GOOGLE STRATEGY ======================
+// ====================== GOOGLE STRATEGY SETUP ======================
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 const clientID = process.env.GOOGLE_CLIENT_ID;
@@ -26,19 +26,20 @@ if (clientID && clientSecret && callbackURL) {
                     const user = await User.findOrCreateGoogleUser(profile);
                     return done(null, user);
                 } catch (err) {
-                    console.error("Google Strategy Error:", err);
+                    console.error("❌ Google Strategy Error:", err);
                     return done(err, null);
                 }
             }
         )
     );
-    console.log("✅ Google Strategy Registered Successfully");
+    console.log("✅ Google OAuth Strategy Registered Successfully");
 } else {
-    console.warn("⚠️ Google OAuth is disabled - Missing credentials");
+    console.warn("⚠️ Google OAuth credentials missing - Google login disabled");
 }
 
-// ====================== PASSPORT SERIALIZE ======================
+// ====================== PASSPORT SERIALIZE / DESERIALIZE ======================
 passport.serializeUser((user, done) => done(null, user.id));
+
 passport.deserializeUser(async (id, done) => {
     try {
         const user = await User.findById(id);
@@ -48,7 +49,7 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
-// ====================== NORMAL ROUTES ======================
+// ====================== NORMAL AUTH ROUTES ======================
 router.get("/signin", (req, res) => res.render("signin"));
 router.get("/signup", (req, res) => res.render("signup"));
 
@@ -80,13 +81,19 @@ router.get("/logout", (req, res) => {
     res.clearCookie("token").redirect("/");
 });
 
-// ====================== GOOGLE ROUTES ======================
+// ====================== GOOGLE OAUTH ROUTES ======================
 router.get("/auth/google", (req, res, next) => {
-    if (!clientID) {
+    console.log("🔍 Google Debug:");
+    console.log("   Client ID     :", clientID ? "✅ Present" : "❌ MISSING");
+    console.log("   Client Secret :", clientSecret ? "✅ Present" : "❌ MISSING");
+    console.log("   Callback URL  :", callbackURL || "❌ MISSING");
+
+    if (!clientID || !clientSecret || !callbackURL) {
         return res.render("signin", { 
             error: "Google login is currently unavailable. Please use email/password." 
         });
     }
+
     passport.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
 });
 
