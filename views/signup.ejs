@@ -2,57 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Blogify</title>
     <style>
-        /* ===== RESET & BASE ===== */
-        *,
-        *::before,
-        *::after {
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        html {
-            -webkit-text-size-adjust: 100%;
-            text-size-adjust: 100%;
-            scroll-behavior: smooth;
-        }
-
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            min-height: 100dvh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 16px;
-            overflow-x: hidden;
+            padding: 20px;
         }
 
         .signup-container {
             background: white;
-            padding: 24px;
+            padding: 40px 30px;
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
             max-width: 420px;
-            position: relative;
-        }
-
-        @media (min-width: 768px) {
-            .signup-container {
-                padding: 40px;
-            }
         }
 
         h2 {
             text-align: center;
             color: #1a1a1a;
             margin-bottom: 24px;
-            font-size: clamp(1.5rem, 5vw, 2rem);
+            font-size: 28px;
         }
 
         .form-group {
@@ -61,10 +43,9 @@
 
         label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             color: #555;
             font-weight: 500;
-            font-size: 16px;
         }
 
         input[type="text"],
@@ -76,13 +57,17 @@
             border-radius: 10px;
             font-size: 16px;
             transition: all 0.3s;
-            min-height: 48px;
         }
 
         input:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input.error-input {
+            border-color: #ef4444;
+            background: #fef2f2;
         }
 
         button[type="submit"] {
@@ -95,14 +80,19 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            min-height: 48px;
+            margin-top: 10px;
+            transition: background 0.3s;
         }
 
-        button[type="submit"]:hover {
+        button[type="submit"]:hover:not(:disabled) {
             background: #5568d3;
         }
 
-        /* Google Button */
+        button[type="submit"]:disabled {
+            background: #a5b4fc;
+            cursor: not-allowed;
+        }
+
         .google-btn {
             width: 100%;
             padding: 14px;
@@ -118,7 +108,7 @@
             gap: 10px;
             margin-top: 15px;
             text-decoration: none;
-            min-height: 48px;
+            transition: all 0.3s;
         }
 
         .google-btn:hover {
@@ -131,7 +121,6 @@
             margin: 24px 0;
             color: #9ca3af;
             position: relative;
-            font-size: 14px;
         }
 
         .divider::before {
@@ -147,6 +136,39 @@
         .divider span {
             background: white;
             padding: 0 15px;
+            position: relative;
+        }
+
+        /* Messages */
+        .success {
+            color: #10b981;
+            background: #d1fae5;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #ef4444;
+            background: #fee2e2;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .field-error {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .field-error.visible {
+            display: block;
         }
 
         /* Modal Styles */
@@ -155,16 +177,18 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            padding: 16px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .modal-overlay.active {
             display: flex;
+            opacity: 1;
         }
 
         .modal {
@@ -172,50 +196,89 @@
             padding: 32px 24px;
             border-radius: 20px;
             box-shadow: 0 25px 80px rgba(0,0,0,0.4);
-            width: 100%;
+            width: 90%;
             max-width: 400px;
             text-align: center;
             position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
         }
 
         .btn-close {
             position: absolute;
             top: 12px;
-            right: 12px;
-            width: 44px;
-            height: 44px;
-            font-size: 24px;
-            background: #f3f4f6;
+            right: 16px;
+            font-size: 28px;
+            background: none;
             border: none;
-            border-radius: 50%;
             cursor: pointer;
             color: #6b7280;
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
         }
 
-        .modal-icon { font-size: 48px; margin-bottom: 12px; }
-        .modal h3 { color: #1a1a1a; margin-bottom: 8px; }
-        .modal p { color: #6b7280; margin-bottom: 24px; font-size: 15px; }
+        .btn-close:hover {
+            background: #f3f4f6;
+            color: #1a1a1a;
+        }
+
+        .modal-icon { 
+            font-size: 48px; 
+            margin-bottom: 12px; 
+        }
+        
+        .modal h3 { 
+            color: #1a1a1a; 
+            margin-bottom: 8px; 
+            font-size: 22px;
+        }
+        
+        .modal p { 
+            color: #6b7280; 
+            margin-bottom: 24px; 
+            font-size: 15px;
+            line-height: 1.5;
+        }
 
         .otp-inputs {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             justify-content: center;
             margin-bottom: 24px;
         }
 
         .otp-digit {
-            width: 52px;
-            height: 60px;
+            width: 50px;
+            height: 55px;
             text-align: center;
             font-size: 24px;
             font-weight: bold;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
+            transition: all 0.2s;
+            caret-color: #667eea;
         }
 
         .otp-digit:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            outline: none;
+        }
+
+        .otp-digit.filled {
+            border-color: #667eea;
+            background: #f5f3ff;
         }
 
         .btn-verify {
@@ -229,6 +292,16 @@
             font-weight: 600;
             cursor: pointer;
             margin-bottom: 12px;
+            transition: background 0.3s;
+        }
+
+        .btn-verify:hover:not(:disabled) {
+            background: #5568d3;
+        }
+
+        .btn-verify:disabled {
+            background: #a5b4fc;
+            cursor: not-allowed;
         }
 
         .btn-resend {
@@ -237,41 +310,104 @@
             color: #667eea;
             font-size: 15px;
             cursor: pointer;
+            font-weight: 500;
+            transition: color 0.2s;
         }
 
-        .timer { color: #9ca3af; font-size: 14px; margin-top: 8px; }
-        .error-message { color: #ef4444; margin: 12px 0; min-height: 20px; }
+        .btn-resend:hover:not(:disabled) {
+            color: #5568d3;
+            text-decoration: underline;
+        }
+
+        .btn-resend:disabled {
+            color: #9ca3af;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+
+        .timer { 
+            color: #9ca3af; 
+            font-size: 14px; 
+            margin-top: 8px; 
+            min-height: 20px;
+        }
+
+        .timer.expired {
+            color: #ef4444;
+        }
+
+        .error-message { 
+            color: #ef4444; 
+            margin: 12px 0; 
+            min-height: 20px; 
+            font-size: 14px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Signup Form -->
     <div class="signup-container">
         <h2>Create Account</h2>
-        
-        <form id="signupForm" action="/user/signup" method="POST">
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="error"><%= error %></div>
+        <% } %>
+
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="success"><%= success %></div>
+        <% } %>
+
+        <form id="signupForm" action="/user/signup" method="POST" novalidate>
             <div class="form-group">
                 <label for="fullName">Full Name</label>
-                <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
+                <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name" 
+                       value="<%= typeof formData !== 'undefined' ? formData.fullName || '' : '' %>">
             </div>
             <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email"
+                       value="<%= typeof formData !== 'undefined' ? formData.email || '' : '' %>">
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Create a password">
+                <input type="password" id="password" name="password" required placeholder="Create password (min 6 chars)" minlength="6">
             </div>
             <div class="form-group">
                 <label for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Confirm your password">
+                <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Confirm password">
+                <div class="field-error" id="passwordError">Passwords do not match</div>
             </div>
-            <button type="submit">Sign Up</button>
+            <button type="submit" id="submitBtn">Sign Up</button>
         </form>
 
         <div class="divider"><span>OR</span></div>
 
-        <!-- Google Account Signup -->
         <a href="/user/auth/google" class="google-btn">
             <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
                  alt="Google" width="20" height="20">
@@ -282,83 +418,290 @@
     <!-- OTP Modal -->
     <div class="modal-overlay" id="otpModal">
         <div class="modal">
-            <button class="btn-close" onclick="closeModal()">×</button>
+            <button class="btn-close" onclick="closeModal()" aria-label="Close">×</button>
             
             <div class="modal-icon">🔐</div>
-            <h3>Enter OTP</h3>
-            <p>We've sent a 6-digit verification code to <strong id="displayEmail"></strong></p>
+            <h3>Verify Your Email</h3>
+            <p>We've sent a 6-digit code to <strong id="displayEmail"></strong></p>
             
             <div class="otp-inputs">
-                <input type="text" maxlength="1" class="otp-digit" data-index="0">
-                <input type="text" maxlength="1" class="otp-digit" data-index="1">
-                <input type="text" maxlength="1" class="otp-digit" data-index="2">
-                <input type="text" maxlength="1" class="otp-digit" data-index="3">
-                <input type="text" maxlength="1" class="otp-digit" data-index="4">
-                <input type="text" maxlength="1" class="otp-digit" data-index="5">
+                <input type="text" maxlength="1" class="otp-digit" data-index="0" inputmode="numeric" autocomplete="one-time-code" aria-label="OTP digit 1">
+                <input type="text" maxlength="1" class="otp-digit" data-index="1" inputmode="numeric" aria-label="OTP digit 2">
+                <input type="text" maxlength="1" class="otp-digit" data-index="2" inputmode="numeric" aria-label="OTP digit 3">
+                <input type="text" maxlength="1" class="otp-digit" data-index="3" inputmode="numeric" aria-label="OTP digit 4">
+                <input type="text" maxlength="1" class="otp-digit" data-index="4" inputmode="numeric" aria-label="OTP digit 5">
+                <input type="text" maxlength="1" class="otp-digit" data-index="5" inputmode="numeric" aria-label="OTP digit 6">
             </div>
             
             <div class="error-message" id="otpError"></div>
             
-            <button class="btn-verify" onclick="verifyOTP()">Verify OTP</button>
-            <button class="btn-resend" id="resendBtn" onclick="resendOTP()">Resend Code</button>
+            <button class="btn-verify" id="verifyBtn" onclick="verifyOTP()">Verify OTP</button>
+            <button class="btn-resend" id="resendBtn" onclick="resendOTP()" disabled>Resend Code</button>
             <div class="timer" id="timer"></div>
         </div>
     </div>
 
     <script>
+        // ===== DOM Elements =====
         const modal = document.getElementById('otpModal');
         const displayEmail = document.getElementById('displayEmail');
         const otpInputs = document.querySelectorAll('.otp-digit');
         const otpError = document.getElementById('otpError');
-        let currentEmail = "";
-        let countdown = 300; // 5 minutes
-        let timerInterval;
+        const signupForm = document.getElementById('signupForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirmPassword');
+        const passwordError = document.getElementById('passwordError');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const resendBtn = document.getElementById('resendBtn');
+        const timerDisplay = document.getElementById('timer');
 
-        // Auto show modal if backend sent emailForVerification
-        window.addEventListener('DOMContentLoaded', () => {
-            <% if (typeof emailForVerification !== 'undefined' && emailForVerification) { %>
-                currentEmail = "<%= emailForVerification %>";
-                displayEmail.textContent = currentEmail;
-                modal.classList.add('active');
-                startTimer();
-            <% } %>
+        // ===== State =====
+        let currentEmail = "";
+        let countdown = 300;
+        let timerInterval;
+        let isSubmitting = false;
+
+        // ===== Initialize =====
+        
+        // Show modal if emailForVerification is passed from backend
+        <% if (typeof emailForVerification !== 'undefined' && emailForVerification) { %>
+            currentEmail = "<%= emailForVerification.replace(/"/g, '\\"') %>";
+            displayEmail.textContent = currentEmail;
+            openModal();
+            startTimer();
+        <% } %>
+
+        // ===== Event Listeners =====
+
+        // Form submission with validation
+        signupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (isSubmitting) return;
+            
+            // Clear previous errors
+            passwordError.classList.remove('visible');
+            passwordInput.classList.remove('error-input');
+            confirmInput.classList.remove('error-input');
+            
+            // Validate passwords match
+            if (passwordInput.value !== confirmInput.value) {
+                passwordError.classList.add('visible');
+                passwordInput.classList.add('error-input');
+                confirmInput.classList.add('error-input');
+                confirmInput.focus();
+                return;
+            }
+            
+            // Validate password length
+            if (passwordInput.value.length < 6) {
+                passwordError.textContent = "Password must be at least 6 characters";
+                passwordError.classList.add('visible');
+                passwordInput.classList.add('error-input');
+                return;
+            }
+            
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Creating Account<span class="loading"></span>';
+            
+            try {
+                const formData = new FormData(signupForm);
+                const data = Object.fromEntries(formData);
+                
+                const res = await fetch('/user/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await res.json();
+                
+                if (result.success && result.emailForVerification) {
+                    currentEmail = result.emailForVerification;
+                    displayEmail.textContent = currentEmail;
+                    openModal();
+                    startTimer();
+                    // Clear form
+                    signupForm.reset();
+                } else {
+                    // Show error from server
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error';
+                    errorDiv.textContent = result.message || 'Signup failed. Please try again.';
+                    signupForm.insertBefore(errorDiv, signupForm.firstChild);
+                    setTimeout(() => errorDiv.remove(), 5000);
+                }
+            } catch (err) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = 'Network error. Please check your connection.';
+                signupForm.insertBefore(errorDiv, signupForm.firstChild);
+                setTimeout(() => errorDiv.remove(), 5000);
+            } finally {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign Up';
+            }
         });
 
-        // OTP Input Logic
+        // OTP Input Handling
         otpInputs.forEach((input, index) => {
-            input.addEventListener('input', () => {
+            // Handle input
+            input.addEventListener('input', (e) => {
+                // Only allow numbers
                 input.value = input.value.replace(/[^0-9]/g, '');
+                
+                // Update filled state
+                if (input.value) {
+                    input.classList.add('filled');
+                } else {
+                    input.classList.remove('filled');
+                }
+                
+                // Auto-focus next
                 if (input.value.length === 1 && index < 5) {
                     otpInputs[index + 1].focus();
                 }
+                
+                // Clear error on input
+                otpError.textContent = '';
+                
+                // Auto-submit if all filled
+                if (index === 5 && input.value) {
+                    const otp = Array.from(otpInputs).map(i => i.value).join('');
+                    if (otp.length === 6) {
+                        verifyOTP();
+                    }
+                }
+            });
+
+            // Handle backspace
+            input.addEventListener('keydown', (e) => {
+                if (e.key === "Backspace" && input.value === "" && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+                // Handle left/right arrows
+                if (e.key === "ArrowLeft" && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+                if (e.key === "ArrowRight" && index < 5) {
+                    otpInputs[index + 1].focus();
+                }
+            });
+
+            // Handle paste
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+                
+                if (pastedData) {
+                    pastedData.split('').forEach((digit, i) => {
+                        if (otpInputs[i]) {
+                            otpInputs[i].value = digit;
+                            otpInputs[i].classList.add('filled');
+                        }
+                    });
+                    
+                    // Focus next empty or last
+                    const nextEmpty = Array.from(otpInputs).findIndex(inp => !inp.value);
+                    if (nextEmpty !== -1) {
+                        otpInputs[nextEmpty].focus();
+                    } else {
+                        otpInputs[5].focus();
+                        verifyOTP();
+                    }
+                }
+            });
+
+            // Focus handling
+            input.addEventListener('focus', () => {
+                input.select();
             });
         });
+
+        // ===== Modal Functions =====
+
+        function openModal() {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            // Focus first input after animation
+            setTimeout(() => {
+                otpInputs[0].focus();
+            }, 100);
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            clearInterval(timerInterval);
+            // Clear inputs
+            otpInputs.forEach(input => {
+                input.value = '';
+                input.classList.remove('filled');
+            });
+            otpError.textContent = '';
+        }
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        // ===== Timer Functions =====
 
         function startTimer() {
             clearInterval(timerInterval);
             countdown = 300;
-            document.getElementById('resendBtn').disabled = true;
+            resendBtn.disabled = true;
+            timerDisplay.classList.remove('expired');
+
+            updateTimerDisplay();
 
             timerInterval = setInterval(() => {
-                const min = Math.floor(countdown / 60);
-                const sec = countdown % 60;
-                document.getElementById('timer').textContent = `Expires in ${min}:${sec < 10 ? '0' : ''}${sec}`;
                 countdown--;
+                updateTimerDisplay();
 
-                if (countdown < 0) {
+                if (countdown <= 0) {
                     clearInterval(timerInterval);
-                    document.getElementById('resendBtn').disabled = false;
-                    document.getElementById('timer').textContent = '';
+                    resendBtn.disabled = false;
+                    timerDisplay.textContent = 'Code expired. You can resend now.';
+                    timerDisplay.classList.add('expired');
                 }
             }, 1000);
         }
 
+        function updateTimerDisplay() {
+            if (countdown > 0) {
+                const min = Math.floor(countdown / 60);
+                const sec = countdown % 60;
+                timerDisplay.textContent = `Expires in ${min}:${sec < 10 ? '0' : ''}${sec}`;
+            }
+        }
+
+        // ===== OTP Verification =====
+
         async function verifyOTP() {
             const otp = Array.from(otpInputs).map(i => i.value).join('');
+            
             if (otp.length !== 6) {
                 otpError.textContent = "Please enter all 6 digits";
+                otpInputs[otp.indexOf('') !== -1 ? otp.indexOf('') : 0].focus();
                 return;
             }
+
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = 'Verifying<span class="loading"></span>';
 
             try {
                 const res = await fetch('/user/verify-otp', {
@@ -370,25 +713,84 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    alert("✅ Account created successfully!");
-                    window.location.href = "/";
+                    verifyBtn.innerHTML = '✓ Verified!';
+                    verifyBtn.style.background = '#10b981';
+                    
+                    setTimeout(() => {
+                        window.location.href = data.redirect || "/";
+                    }, 800);
                 } else {
-                    otpError.textContent = data.message || "Invalid OTP";
+                    otpError.textContent = data.message || "Invalid OTP. Please try again.";
+                    // Shake animation
+                    otpInputs.forEach(input => {
+                        input.style.animation = 'shake 0.5s';
+                        setTimeout(() => input.style.animation = '', 500);
+                    });
+                    // Clear inputs for retry
+                    setTimeout(() => {
+                        otpInputs.forEach(input => {
+                            input.value = '';
+                            input.classList.remove('filled');
+                        });
+                        otpInputs[0].focus();
+                    }, 200);
                 }
             } catch (err) {
-                otpError.textContent = "Something went wrong. Please try again.";
+                otpError.textContent = "Network error. Please try again.";
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify OTP';
             }
         }
 
-        function closeModal() {
-            modal.classList.remove('active');
-            clearInterval(timerInterval);
+        // ===== Resend OTP =====
+
+        async function resendOTP() {
+            if (countdown > 0) return;
+            
+            resendBtn.disabled = true;
+            resendBtn.innerHTML = 'Sending<span class="loading"></span>';
+            
+            try {
+                const res = await fetch('/user/resend-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentEmail })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    otpError.textContent = '';
+                    startTimer();
+                    // Clear inputs
+                    otpInputs.forEach(input => {
+                        input.value = '';
+                        input.classList.remove('filled');
+                    });
+                    otpInputs[0].focus();
+                } else {
+                    otpError.textContent = data.message || "Failed to resend. Please try again.";
+                    resendBtn.disabled = false;
+                }
+            } catch (err) {
+                otpError.textContent = "Network error. Please try again.";
+                resendBtn.disabled = false;
+            } finally {
+                resendBtn.textContent = 'Resend Code';
+            }
         }
 
-        function resendOTP() {
-            alert("Resend OTP feature coming soon!");
-            // You can implement /user/resend-otp route later
-        }
+        // ===== Shake Animation =====
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
