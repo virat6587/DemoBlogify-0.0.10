@@ -12,7 +12,7 @@
         <li class="nav-item">
           <a class="nav-link" aria-current="page" href="/">Home</a>
         </li>
-        <% if(locals.user) { %>
+        <% if (locals.user) { %>
           <li class="nav-item">
             <a class="nav-link" href="/blogs/add-new">Add Blog</a>
           </li>
@@ -21,12 +21,12 @@
 
       <!-- Right side links (Authentication & Profile) -->
       <ul class="navbar-nav ms-auto align-items-center">
-        <% if(locals.user) { %>
+        <% if (locals.user) { %>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <!-- Logged in Profile image and username layout display -->
+              <!-- Profile Image -->
               <img 
-                src="<%= locals.user.profileImageURL %>" 
+                src="<%= locals.user.profileImageURL || '/imgs/default.png' %>" 
                 alt="<%= locals.user.fullName %>" 
                 width="32" 
                 height="32" 
@@ -52,15 +52,14 @@
           </li>
         <% } %>
       </ul>
-      
     </div>
   </div>
 </nav>
 
 <% if (locals.error) { %>
-  <div class="container" style="margin-top: 80px;"> 
+  <div class="container mt-5"> 
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      <%= error %>
+      <%= locals.error %>
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   </div>
