@@ -24,7 +24,6 @@
             overflow: hidden;
             background: #1a1a1a;
             margin-bottom: 24px;
-            position: relative;
         }
         .blog-card-full:hover {
             transform: translateY(-4px);
@@ -42,15 +41,8 @@
             border-radius: 50%;
             object-fit: cover;
         }
-
-        /* White Color for Author Name and Time */
-        .author-name {
+        .author-name, .time-ago {
             color: #ffffff !important;
-            font-weight: 600;
-        }
-        .time-ago {
-            color: #ffffff !important;
-            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -81,9 +73,7 @@
                                      onerror="this.src='/images/default-blog.png';"
                                      alt="<%= blog.title %>">
                             </div>
-
                             <div class="col-md-8 p-4 position-relative">
-                                <!-- 3 Dots Menu -->
                                 <div class="dropdown position-absolute top-0 end-0 m-3">
                                     <button class="btn btn-link text-light p-1" data-bs-toggle="dropdown">
                                         <i class="fas fa-ellipsis-v"></i>
@@ -92,14 +82,9 @@
                                         <li><a class="dropdown-item" href="/blogs/<%= blog._id %>"><i class="fas fa-eye me-2"></i>View</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="shareBlog('<%= blog._id %>')"><i class="fas fa-share-alt me-2"></i>Share</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="downloadBlog('<%= blog._id %>')"><i class="fas fa-download me-2"></i>Download</a></li>
-                                        
                                         <% if (user && blog.createdBy && String(blog.createdBy._id) === String(user._id)) { %>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <a class="dropdown-item text-danger" href="#" onclick="deleteBlog('<%= blog._id %>')">
-                                                    <i class="fas fa-trash me-2"></i>Delete
-                                                </a>
-                                            </li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteBlog('<%= blog._id %>')"><i class="fas fa-trash me-2"></i>Delete</a></li>
                                         <% } %>
                                     </ul>
                                 </div>
@@ -133,53 +118,49 @@
     <%- include("./partials/scripts") %>
 
     <script>
+        // === FORCE RELOAD AFTER GOOGLE LOGIN ===
+        if (new URLSearchParams(window.location.search).get('auth') === 'success') {
+            console.log("🔄 Reloading after Google Login...");
+            window.history.replaceState({}, document.title, "/");
+            window.location.reload(true);
+        }
+
         // Time Ago Function
         function timeAgo(date) {
             const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-
             let interval = seconds / 31536000;
             if (interval > 1) return Math.floor(interval) + " year" + (Math.floor(interval) > 1 ? "s" : "") + " ago";
-
             interval = seconds / 2592000;
             if (interval > 1) return Math.floor(interval) + " month" + (Math.floor(interval) > 1 ? "s" : "") + " ago";
-
             interval = seconds / 86400;
             if (interval > 1) return Math.floor(interval) + " day" + (Math.floor(interval) > 1 ? "s" : "") + " ago";
-
             interval = seconds / 3600;
             if (interval > 1) return Math.floor(interval) + " hour" + (Math.floor(interval) > 1 ? "s" : "") + " ago";
-
             interval = seconds / 60;
             if (interval > 1) return Math.floor(interval) + " minute" + (Math.floor(interval) > 1 ? "s" : "") + " ago";
-
             return "Just now";
         }
 
-        // Apply time ago to all elements
         document.querySelectorAll('.time-ago').forEach(el => {
             const date = el.getAttribute('data-time');
             if (date) el.textContent = timeAgo(date);
         });
 
-        // Delete, Share, Download Functions
         function deleteBlog(id) {
-            if (confirm("Delete this blog permanently?")) {
+            if (confirm("Delete this blog?")) {
                 fetch(`/blogs/${id}`, { method: 'DELETE' })
                     .then(res => res.json())
-                    .then(data => {
-                        if (data.success) location.reload();
-                        else alert(data.message || "Failed to delete");
-                    });
+                    .then(data => { if (data.success) location.reload(); });
             }
         }
 
         function shareBlog(id) {
             navigator.clipboard.writeText(`${window.location.origin}/blogs/${id}`)
-                .then(() => alert("Link copied to clipboard!"));
+                .then(() => alert("Link copied!"));
         }
 
         function downloadBlog(id) {
-            alert("Download feature coming soon!");
+            alert("Download coming soon!");
         }
     </script>
 </body>
