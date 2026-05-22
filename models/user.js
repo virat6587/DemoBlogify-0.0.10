@@ -33,21 +33,18 @@ const UserSchema = new Schema({
     },
 }, { timestamps: true });
 
-// Password Hashing (Only for email/password users)
+// Password Hashing (Only for normal users)
 UserSchema.pre("save", async function (next) {
     if (this.googleId || !this.password || !this.isModified("password")) {
         return next();
     }
-
     try {
         const salt = randomBytes(16).toString("hex");
         this.salt = salt;
-        this.password = createHmac("sha256", salt)
-            .update(this.password)
-            .digest("hex");
+        this.password = createHmac("sha256", salt).update(this.password).digest("hex");
         next();
     } catch (error) {
-        console.error("❌ Password Hashing Error:", error);
+        console.error("Password Hashing Error:", error);
         next(error);
     }
 });
@@ -67,30 +64,37 @@ UserSchema.static("matchPassword", async function (email, password) {
     return creatTokenForUser(user);
 });
 
-// Improved findOrCreateGoogleUser
+// ====================== GOOGLE USER HANDLING ======================
 UserSchema.static("findOrCreateGoogleUser", async function (profile) {
     try {
         const email = profile.emails[0].value.toLowerCase();
-        console.log(`🔍 Google Login: ${email}`);
+        const googleId = profile.id;
 
-        // Check by Google ID
-        let user = await this.findOne({ googleId: profile.id });
+        console.log(`🔍 Google Login Attempt: ${email}`);
+
+        // 1. Check if already linked with Google
+        let user = await this.findOne({ googleId });
 
         if (!user) {
-            // Check by email (if user signed up normally before)
+            // 2. Check if email already exists (from normal signup)
             user = await this.findOne({ email });
 
             if (user) {
-                console.log(`🔗 Linking Google to existing user: ${email}`);
-                user.googleId = profile.id;
-                if (profile.photos?.[0]?.value) user.profileImageURL = profile.photos[0].value;
+                console.log(`🔗 Linking Google to existing account: ${email}`);
+                // Keep existing fullName (as you requested)
+                user.googleId = googleId;
+                // Update profile picture from Google
+                if (profile.photos?.[0]?.value) {
+                    user.profileImageURL = profile.photos[0].value;
+                }
                 await user.save();
             } else {
+                // 3. Create new user
                 console.log(`🆕 Creating new Google user: ${email}`);
                 user = await this.create({
                     fullName: profile.displayName || "Google User",
                     email: email,
-                    googleId: profile.id,
+                    googleId: googleId,
                     profileImageURL: profile.photos?.[0]?.value || "/imgs/default.png"
                 });
             }
@@ -98,7 +102,7 @@ UserSchema.static("findOrCreateGoogleUser", async function (profile) {
 
         return user;
     } catch (error) {
-        console.error("❌ Google User Error:", error.message);
+        console.error("❌ findOrCreateGoogleUser Error:", error.message);
         throw error;
     }
 });
