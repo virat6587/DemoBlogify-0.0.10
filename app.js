@@ -2,6 +2,7 @@ const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
+const passport = require("passport");
 
 const UserRoute = require("./routes/User");
 const BlogRoute = require("./routes/Blog");
@@ -38,6 +39,9 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.resolve("./public")));
+
+// === PASSPORT INITIALIZATION (REQUIRED FOR GOOGLE OAUTH) ===
+app.use(passport.initialize());
 
 app.use(checkForAuthenticationCookie("token"));
 
