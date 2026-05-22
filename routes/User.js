@@ -83,10 +83,7 @@ router.get("/logout", (req, res) => {
 
 // ====================== GOOGLE OAUTH ROUTES ======================
 router.get("/auth/google", (req, res, next) => {
-    console.log("🔍 Google Debug:");
-    console.log("   Client ID     :", clientID ? "✅ Present" : "❌ MISSING");
-    console.log("   Client Secret :", clientSecret ? "✅ Present" : "❌ MISSING");
-    console.log("   Callback URL  :", callbackURL || "❌ MISSING");
+    console.log("🔍 Google Auth Initiated");
 
     if (!clientID || !clientSecret || !callbackURL) {
         return res.render("signin", { 
@@ -94,15 +91,22 @@ router.get("/auth/google", (req, res, next) => {
         });
     }
 
-    passport.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
+    passport.authenticate("google", { 
+        scope: ["profile", "email"] 
+    })(req, res, next);
 });
 
 router.get("/auth/google/callback",
     passport.authenticate("google", { 
         failureRedirect: "/user/signin",
-        failureMessage: true 
+        failureMessage: true,
+        session: false          // ← THIS IS THE FIX
     }),
     (req, res) => {
+        if (!req.user) {
+            return res.redirect("/user/signin");
+        }
+
         const token = creatTokenForUser(req.user);
         res.cookie("token", token, {
             httpOnly: true,
