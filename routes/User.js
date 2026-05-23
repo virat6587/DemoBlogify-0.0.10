@@ -44,7 +44,15 @@ router.post('/logout', (req, res) => {
     res.status(200).json({ success: true, message: "Logged out successfully" });
 });
 
-// ====================== SEND OTP (Updated) ======================
+// ====================== GET SIGNUP PAGE (New) ======================
+router.get('/signup', (req, res) => {
+    res.render('signup', { 
+        user: req.user || null,
+        error: null 
+    });
+});
+
+// ====================== SEND OTP ======================
 router.post('/send-otp', async (req, res) => {
     const { email } = req.body;
 
@@ -55,7 +63,6 @@ router.post('/send-otp', async (req, res) => {
     try {
         const normalizedEmail = email.toLowerCase().trim();
 
-        // Check if email already exists
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             return res.status(409).json({
@@ -65,7 +72,7 @@ router.post('/send-otp', async (req, res) => {
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const expires = Date.now() + 5 * 60 * 1000; // 5 minutes
+        const expires = Date.now() + 5 * 60 * 1000;
 
         otpStore.set(normalizedEmail, { otp, expires });
 
@@ -78,7 +85,7 @@ router.post('/send-otp', async (req, res) => {
     }
 });
 
-// ====================== SIGNUP (Updated) ======================
+// ====================== SIGNUP ======================
 router.post('/signup', async (req, res) => {
     const { fullName, email, password, otp } = req.body;
 
@@ -89,16 +96,13 @@ router.post('/signup', async (req, res) => {
     try {
         const normalizedEmail = email.toLowerCase().trim();
 
-        // Validate OTP
         const stored = otpStore.get(normalizedEmail);
         if (!stored || stored.otp !== otp || stored.expires < Date.now()) {
             return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
         }
 
-        // Clear OTP after use
         otpStore.delete(normalizedEmail);
 
-        // Check if user already exists
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             return res.status(409).json({
@@ -107,14 +111,12 @@ router.post('/signup', async (req, res) => {
             });
         }
 
-        // Create new user (Your model will handle password hashing)
         const newUser = await User.create({
             fullName,
             email: normalizedEmail,
             password
         });
 
-        // Generate token using your original signin logic
         const token = await User.matchPassword(normalizedEmail, password);
 
         res.cookie("token", token, {
