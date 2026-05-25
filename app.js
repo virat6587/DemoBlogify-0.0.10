@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const passport = require("passport");
+const { graphqlHTTP } = require("express-graphql");
 
 const UserRoute = require("./routes/User");
 const GoogleAuthRoute = require("./routes/GoogleAuthentication");
@@ -11,21 +12,13 @@ const AdminRoute = require("./routes/Admin");
 const ProfileRoute = require("./routes/Profile");
 
 const { checkForAuthenticationCookie } = require("./middlewares/authentication");
+const { queryHandler } = require("./middlewares/queryParams");
+const { schema, root } = require("./graphql/schema");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
 require("dotenv").config();
-
-console.log("🔧 ENV Check - EMAIL_USER:", !!process.env.EMAIL_USER);
-
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI;
-if (MONGODB_URI) {
-    mongoose.connect(MONGODB_URI)
-        .then(() => console.log("✅ MongoDB Connected"))
-        .catch(err => console.error("❌ MongoDB Error:", err.message));
-}
 
 // Middleware
 app.set("view engine", "ejs");
@@ -38,52 +31,54 @@ app.use(express.static(path.resolve("./public")));
 
 app.use(passport.initialize());
 app.use(checkForAuthenticationCookie("token"));
+app.use(queryHandler);                    // Query Params Middleware
 
-// ====================== HOME ROUTE WITH QUERY PARAMS ======================
+// ====================== GRAPHQL ======================
+app.use('/graphql', graphqlHTTP({
+    schema: schema,
+    rootValue: root,
+    graphiql: true
+}));
+
+// ====================== HOME ROUTE ======================
 app.get("/", async (req, res) => {
     try {
         const Blog = require("./models/Blog");
-        const { search, page = 1, limit = 9, sort = "newest" } = req.query;
+        const { search, sort, page, limit, skip } = req.queryParams;
 
-        const filter = {};
-        let sortOption = { createdAt: -1 };
-
-        if (search) {
-            filter.$or = [
+        const filter = search ? {
+            $or: [
                 { title: { $regex: search, $options: "i" } },
                 { body: { $regex: search, $options: "i" } }
-            ];
-        }
+            ]
+        } : {};
 
+        let sortOption = { createdAt: -1 };
         if (sort === "oldest") sortOption = { createdAt: 1 };
-        else if (sort === "title") sortOption = { title: 1 };
+        if (sort === "title") sortOption = { title: 1 };
 
-        const pageNum = parseInt(page);
-        const limitNum = parseInt(limit);
-        const skip = (pageNum - 1) * limitNum;
-
-        const allBlogs = await Blog.find(filter)
+        const blogs = await Blog.find(filter)
             .sort(sortOption)
             .skip(skip)
-            .limit(limitNum)
+            .limit(limit)
             .populate("createdBy", "fullName profileImageURL")
             .lean();
 
         const totalBlogs = await Blog.countDocuments(filter);
-        const totalPages = Math.ceil(totalBlogs / limitNum);
+        const totalPages = Math.ceil(totalBlogs / limit);
 
-        res.render("home", { 
+        res.render("home", {
+            title: "Blogify - Home",
             user: req.user || null,
-            blogs: allBlogs || [],
-            currentPage: pageNum,
+            blogs,
+            currentPage: page,
             totalPages,
             totalBlogs,
-            search: search || "",
-            sort: sort,
-            limit: limitNum
+            search,
+            sort
         });
     } catch (error) {
-        console.error("Home Route Error:", error);
+        console.error("Home Error:", error);
         res.status(500).send("Internal Server Error");
     }
 });
@@ -97,6 +92,5 @@ app.use("/blogs", BlogRoute);
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 GraphQL → http://localhost:${PORT}/graphql`);
 });
-
-module.exports = app;
