@@ -60,6 +60,33 @@ router.post("/add-new", blogCreationLimiter, cloudinaryUpload.single("coverImage
     }
 });
 
+// ====================== GET - Edit Blog Form ======================
+router.get("/:id/edit", async (req, res) => {
+    try {
+        const blog = await Blog.findById(req.params.id)
+            .notDeleted()
+            .lean();
+
+        if (!blog) {
+            return res.status(404).send("Blog not found");
+        }
+
+        // Check ownership
+        if (blog.createdBy.toString() !== req.user._id.toString()) {
+            return res.status(403).send("You are not authorized to edit this blog");
+        }
+
+        res.render("editBlog", { 
+            user: req.user, 
+            blog,
+            error: null 
+        });
+    } catch (error) {
+        console.error("Edit Blog Page Error:", error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
 // ====================== GET - Single Blog ======================
 router.get("/:id", async (req, res) => {
     try {
