@@ -1,204 +1,147 @@
 const express = require("express");
 const router = express.Router();
-const Blog = require("../models/Blog");
 const User = require("../models/user");
 const { restrictToLoggedInUserOnly } = require("../middlewares/authentication");
-const cloudinaryUpload = require("../middlewares/CloudinaryUploads");
+const NotificationService = require("../services/notificationService");
 
 router.use(restrictToLoggedInUserOnly);
 
-// ====================== GET USER PROFILE ======================
-router.get("/", async (req, res) => {
+// ====================== FOLLOW / UNFOLLOW USER ======================
+router.post("/:userId/follow", async (req, res) => {
     try {
-        const { search } = req.query;
-        const filter = { createdBy: req.user._id };
+        const { userId } = req.params;
+        const currentUserId = req.user._id.toString();
 
-        if (search) {
-            filter.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { body: { $regex: search, $options: "i" } }
-            ];
+        // Validate user ID format
+        if (!userId || userId === currentUserId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Cannot follow yourself" 
+            });
         }
 
-        const userBlogs = await Blog.find(filter)
-            .sort({ createdAt: -1 })
-            .lean();
+        // Get fresh user data from database
+        const currentUser = await User.findById(currentUserId);
+        if (!currentUser) {
+            return res.status(401).json({ 
+                success: false, 
+                message: "User session invalid" 
+            });
+        }
 
-        res.render("profile", {
-            user: req.user,
-            blogs: userBlogs,
-            search: search || ""
-        });
-    } catch (error) {
-        console.error("Profile Error:", error);
-        res.status(500).send("Server Error");
-    }
-});
-
-// ====================== GET EDIT PROFILE PAGE ======================
-router.get("/edit", async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id)
-            .populate("followers", "fullName profileImageURL")
-            .populate("following", "fullName profileImageURL");
-
-        res.render("editProfile", {
-            user: user,
-            success: null,
-            error: null
-        });
-    } catch (error) {
-        console.error("Edit Profile Page Error:", error);
-        res.status(500).render("error", { error: error.message });
-    }
-});
-
-// ====================== UPDATE PROFILE ======================
-router.put("/update", async (req, res) => {
-    try {
-        const { fullName, bio, website, location } = req.body;
-
-        const user = await User.findById(req.user._id);
-        if (!user) {
+        const targetUser = await User.findById(userId);
+        if (!targetUser) {
             return res.status(404).json({ 
                 success: false, 
                 message: "User not found" 
             });
         }
 
-        // Update user fields
-        user.fullName = fullName || user.fullName;
-        user.bio = bio || user.bio;
-        user.website = website || user.website;
-        user.location = location || user.location;
+        // Check if already following safely
+        const isFollowing = typeof currentUser.isFollowing === 'function' 
+            ? currentUser.isFollowing(userId) 
+            : currentUser.following.includes(userId);
 
-        // Save user
-        await user.save();
+        if (isFollowing) {
+            // UNFOLLOW: Remove from current user's following list
+            await User.findByIdAndUpdate(
+                currentUserId,
+                { $pull: { following: userId } },
+                { new: true }
+            );
 
-        res.json({ 
-            success: true, 
-            message: "Profile updated successfully",
-            user: user
-        });
+            // Remove current user from target user's followers list
+            await User.findByIdAndUpdate(
+                userId,
+                { $pull: { followers: currentUserId } },
+                { new: true }
+            );
+
+            return res.json({ 
+                success: true, 
+                following: false,
+                message: "Unfollowed successfully"
+            });
+        } else {
+            // FOLLOW: Add to current user's following list
+            await User.findByIdAndUpdate(
+                currentUserId,
+                { $addToSet: { following: userId } },
+                { new: true }
+            );
+
+            // Add current user to target user's followers list
+            await User.findByIdAndUpdate(
+                userId,
+                { $addToSet: { followers: currentUserId } },
+                { new: true }
+            );
+
+            // Send notification to target user
+            try {
+                await NotificationService.createNotification(
+                    userId,
+                    "follow",
+                    {
+                        title: "New follower",
+                        message: `${currentUser.fullName} started following you`,
+                        actor: currentUserId
+                    }
+                );
+
+                // Send email notification
+                await NotificationService.sendEmailNotification(targetUser, "follow", {
+                    actorName: currentUser.fullName
+                });
+            } catch (notifError) {
+                console.error("Notification error (non-critical):", notifError);
+                // Don't fail the follow operation if notification fails
+            }
+
+            return res.json({ 
+                success: true, 
+                following: true,
+                message: "Followed successfully"
+            });
+        }
     } catch (error) {
-        console.error("Update Profile Error:", error);
+        console.error("Follow Error:", error);
         res.status(500).json({ 
             success: false, 
-            message: error.message || "Failed to update profile" 
+            message: error.message || "Failed to follow user" 
         });
     }
 });
 
-// ====================== UPLOAD PROFILE IMAGE ======================
-router.post("/upload-image", cloudinaryUpload.single("profileImage"), async (req, res) => {
+// ====================== GET FOLLOWERS ======================
+router.get("/:userId/followers", async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "No image uploaded" 
-            });
+        const user = await User.findById(req.params.userId)
+            .populate("followers", "fullName email profileImageURL");
+            
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
         }
-
-        const user = await User.findById(req.user._id);
-        user.profileImageURL = req.file.path;
-        await user.save();
-
-        res.json({ 
-            success: true, 
-            message: "Profile image updated",
-            imageURL: req.file.path
-        });
-    } catch (error) {
-        console.error("Upload Image Error:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Failed to upload image" 
-        });
-    }
-});
-
-// ====================== CHANGE PASSWORD ======================
-router.post("/change-password", async (req, res) => {
-    try {
-        const { currentPassword, newPassword } = req.body;
-
-        if (!currentPassword || !newPassword) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Current and new passwords are required" 
-            });
-        }
-
-        if (newPassword.length < 6) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "New password must be at least 6 characters" 
-            });
-        }
-
-        // Verify current password
-        const user = await User.findById(req.user._id);
         
-        if (user.googleId && !user.password) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "This account uses Google Sign-In. Cannot change password." 
-            });
-        }
-
-        const { createHmac } = require("crypto");
-        const currentHash = createHmac("sha256", user.salt)
-            .update(currentPassword)
-            .digest("hex");
-
-        if (user.password !== currentHash) {
-            return res.status(401).json({ 
-                success: false, 
-                message: "Current password is incorrect" 
-            });
-        }
-
-        // Update password (will be hashed by pre-save hook)
-        user.password = newPassword;
-        await user.save();
-
-        res.json({ 
-            success: true, 
-            message: "Password changed successfully" 
-        });
+        return res.json({ success: true, followers: user.followers });
     } catch (error) {
-        console.error("Change Password Error:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Failed to change password" 
-        });
+        return res.status(500).json({ success: false, message: error.message });
     }
 });
 
-// ====================== DELETE ACCOUNT ======================
-router.delete("/delete-account", async (req, res) => {
+// ====================== GET FOLLOWING ======================
+router.get("/:userId/following", async (req, res) => {
     try {
-        const userId = req.user._id;
-
-        // Delete all user's blogs
-        await Blog.deleteMany({ createdBy: userId });
-
-        // Delete user
-        await User.findByIdAndDelete(userId);
-
-        // Clear auth cookie
-        res.clearCookie("token");
-
-        res.json({ 
-            success: true, 
-            message: "Account deleted successfully" 
-        });
+        const user = await User.findById(req.params.userId)
+            .populate("following", "fullName email profileImageURL");
+            
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        
+        return res.json({ success: true, following: user.following });
     } catch (error) {
-        console.error("Delete Account Error:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Failed to delete account" 
-        });
+        return res.status(500).json({ success: false, message: error.message });
     }
 });
 
