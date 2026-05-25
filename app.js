@@ -3,7 +3,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const passport = require("passport");
-const { graphqlHTTP } = require("express-graphql");
 
 const UserRoute = require("./routes/User");
 const GoogleAuthRoute = require("./routes/GoogleAuthentication");
@@ -13,7 +12,6 @@ const ProfileRoute = require("./routes/Profile");
 
 const { checkForAuthenticationCookie } = require("./middlewares/authentication");
 const { queryHandler } = require("./middlewares/queryParams");
-const { schema, root } = require("./graphql/schema");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -31,21 +29,13 @@ app.use(express.static(path.resolve("./public")));
 
 app.use(passport.initialize());
 app.use(checkForAuthenticationCookie("token"));
-app.use(queryHandler);
-
-// ====================== GRAPHQL ROUTE ======================
-app.use('/graphql', graphqlHTTP({
-    schema: schema,
-    rootValue: root,
-    graphiql: true,           // Enable GraphQL Playground
-    context: (req) => ({ user: req.user })   // Pass user to GraphQL
-}));
+app.use(queryHandler);   // ← Must be here
 
 // ====================== HOME ROUTE ======================
 app.get("/", async (req, res) => {
     try {
         const Blog = require("./models/Blog");
-        const { search = '', sort = 'newest', page = 1, limit = 9 } = req.queryParams || req.query;
+        const { search = '', sort = 'newest', page = 1, limit = 9 } = req.queryParams || {};
 
         const filter = search ? {
             $or: [
@@ -82,11 +72,11 @@ app.get("/", async (req, res) => {
         });
     } catch (error) {
         console.error("🚨 Home Route Error:", error.message);
-        res.status(500).send("Internal Server Error");
+        res.status(500).send("Internal Server Error - Check Logs");
     }
 });
 
-// ====================== OTHER ROUTES ======================
+// ====================== ROUTES ======================
 app.use("/admin", AdminRoute);
 app.use("/user/profile", ProfileRoute);
 app.use("/user", UserRoute);
@@ -95,7 +85,6 @@ app.use("/blogs", BlogRoute);
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📊 GraphQL Playground → http://localhost:${PORT}/graphql`);
 });
 
 module.exports = app;
