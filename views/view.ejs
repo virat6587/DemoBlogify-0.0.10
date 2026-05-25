@@ -10,64 +10,147 @@
         .blog-container {
             max-width: 800px;
         }
+
+        /* ========== IMPROVED TEXT SPACING ========== */
         .blog-content {
             font-size: 1.1rem;
             line-height: 1.9;
             color: #2b2b2b;
+            letter-spacing: 0.3px;
         }
+
         .blog-content h1, .blog-content h2, .blog-content h3 {
-            margin-top: 2.5rem;
-            margin-bottom: 1.2rem;
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
             font-weight: 700;
             color: #111;
+            letter-spacing: 0.5px;
         }
+
+        .blog-content h1 {
+            font-size: 2.5rem;
+            margin-top: 4rem;
+        }
+
+        .blog-content h2 {
+            font-size: 2rem;
+            margin-top: 3.5rem;
+            padding-top: 1rem;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .blog-content h3 {
+            font-size: 1.5rem;
+        }
+
+        .blog-content h4, .blog-content h5, .blog-content h6 {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Enhanced paragraph spacing */
         .blog-content p {
-            margin-bottom: 1.6rem;
+            margin-bottom: 2rem;
+            line-height: 2;
+            text-align: justify;
         }
+
+        .blog-content p + p {
+            margin-top: 2rem;
+        }
+
+        /* List improvements */
+        .blog-content ul, .blog-content ol {
+            margin: 2rem 0;
+            padding-left: 2.5rem;
+            line-height: 2;
+        }
+
+        .blog-content li {
+            margin-bottom: 1rem;
+            margin-left: 0.5rem;
+        }
+
+        .blog-content li + li {
+            margin-top: 1.2rem;
+        }
+
+        /* Blockquote improvements */
+        .blog-content blockquote {
+            margin: 2.5rem 0;
+            padding: 1.5rem 2rem;
+            border-left: 4px solid #6366f1;
+            background-color: #f8f9fa;
+            font-style: italic;
+            color: #555;
+        }
+
         .blog-content img {
             max-width: 100%;
             height: auto;
-            margin: 2rem 0;
+            margin: 3rem 0;
             border-radius: 8px;
+            display: block;
         }
-        
+
+        .blog-content table {
+            margin: 2.5rem 0;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .blog-content table th,
+        .blog-content table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .blog-content table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
         /* =========================================================
-           CODE BLOCK WRAPPER (Dark box + badge + footer)
+           CODE BLOCK WRAPPER (Dark box + badge + footer + enhanced scrolling)
            ========================================================= */
         .code-block-wrapper {
             position: relative;
             background: #1e1e1e;
             border-radius: 12px;
             overflow: hidden;
-            margin: 2rem 0;
+            margin: 2.5rem 0;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border: 1px solid #2d2d2d;
         }
         
         /* Language badge top-left */
         .code-lang-badge {
             display: inline-block;
-            background: #2d2d2d;
+            background: linear-gradient(135deg, #2d2d2d, #3a3a3a);
             color: #e0e0e0;
             font-family: 'Fira Code', Consolas, Monaco, monospace;
             font-size: 0.85rem;
             font-weight: 600;
-            padding: 6px 14px;
+            padding: 8px 16px;
             border-bottom-right-radius: 8px;
             border-top-left-radius: 12px;
             letter-spacing: 0.5px;
-            text-transform: lowercase;
+            text-transform: uppercase;
+            z-index: 10;
+            position: relative;
         }
         
-        /* Scrollable code area */
+        /* Scrollable code area - Support for 10,000+ lines */
         .blog-content pre {
             background-color: #1e1e1e !important;
-            padding: 1rem 1.25rem;
+            padding: 2rem 1.5rem;
             margin: 0;
             border-radius: 0;
             box-shadow: none;
             border: none;
             
-            max-height: 550px !important; 
+            max-height: 600px !important; 
             overflow-y: auto !important;
             overflow-x: auto !important;
             display: block;
@@ -75,22 +158,51 @@
             will-change: transform;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
-            contain: paint layout;
+            contain: paint layout style;
+            scroll-behavior: smooth;
+        }
+
+        /* Enhanced scrollbar styling */
+        .blog-content pre::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        .blog-content pre::-webkit-scrollbar-track {
+            background: #1e1e1e;
+            border-radius: 10px;
+        }
+
+        .blog-content pre::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #3c3c3c, #4b4b4b);
+            border-radius: 10px;
+            border: 2px solid #1e1e1e;
+        }
+
+        .blog-content pre::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #4b4b4b, #5a5a5a);
+        }
+
+        /* Firefox scrollbar */
+        .blog-content pre {
+            scrollbar-width: thin;
+            scrollbar-color: #3c3c3c #1e1e1e;
         }
         
         /* Code typography */
         .blog-content pre code {
-            font-family: 'Fira Code', Consolas, Monaco, 'Courier New', monospace !important;
+            font-family: 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace !important;
             font-size: 0.9rem;
             background-color: transparent !important;
             padding: 0;
             display: block;
-            line-height: 1.65;
+            line-height: 1.7;
             tab-size: 4;
             -moz-tab-size: 4;
             white-space: pre !important; 
             word-break: normal !important;
             word-wrap: normal !important;
+            color: #d4d4d4;
         }
 
         /* Footer bar */
@@ -98,93 +210,121 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: #1e1e1e;
-            padding: 10px 16px;
+            background: linear-gradient(90deg, #1e1e1e, #222222);
+            padding: 12px 16px;
             border-top: 1px solid #2d2d2d;
             font-size: 0.82rem;
             color: #9e9e9e;
+            z-index: 10;
+            position: relative;
         }
         
         .code-footer .caution-text {
             font-style: italic;
+            font-size: 0.8rem;
+        }
+
+        .code-footer .line-count {
+            font-size: 0.8rem;
+            color: #6a6a6a;
         }
         
         .code-footer .copy-btn {
             background: transparent;
-            border: none;
+            border: 1px solid #3c3c3c;
             color: #9e9e9e;
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 6px 12px;
             border-radius: 6px;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 0.85rem;
+            font-weight: 500;
         }
+
         .code-footer .copy-btn:hover {
             background: #2d2d2d;
             color: #fff;
-        }
-        .code-footer .copy-btn.copied {
-            color: #98c379;
+            border-color: #4a4a4a;
         }
 
-        /* VIBRANT SYNTAX COLORS (Screenshot Style) */
+        .code-footer .copy-btn.copied {
+            color: #4ade80;
+            border-color: #4ade80;
+        }
+
+        /* ========== VIBRANT SYNTAX COLORS ========== */
         .hljs {
             color: #d4d4d4 !important;
+            background-color: #1e1e1e !important;
         }
-        .hljs-keyword, .hljs-selector-tag, .hljs-built_in { 
+
+        /* Keywords - Purple */
+        .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-builtin-name { 
             color: #c586c0 !important; 
             font-weight: normal; 
         }
+
+        /* Strings - Orange */
         .hljs-string, .hljs-meta .hljs-string { 
             color: #ce9178 !important; 
         }
-        .hljs-title, .hljs-section, .hljs-function { 
+
+        /* Function names and titles - Yellow */
+        .hljs-title, .hljs-section, .hljs-function, .hljs-function-name { 
             color: #dcdcaa !important; 
         }
-        .hljs-variable, .hljs-template-variable, .hljs-params { 
+
+        /* Variables - Blue */
+        .hljs-variable, .hljs-template-variable, .hljs-params, .hljs-name { 
             color: #9cdcfe !important; 
         }
+
+        /* Comments - Green */
         .hljs-comment, .hljs-quote { 
             color: #6a9955 !important; 
             font-style: italic; 
         }
+
+        /* Numbers and attributes - Light Blue */
         .hljs-attr, .hljs-number, .hljs-literal { 
             color: #9cdcfe !important; 
         }
-        .hljs-tag, .hljs-name, .hljs-type { 
+
+        /* Tags - Blue */
+        .hljs-tag, .hljs-type, .hljs-doctag { 
             color: #569cd6 !important; 
         }
-        .hljs-property, .hljs-regexp { 
+
+        /* Properties - Teal */
+        .hljs-property, .hljs-regexp, .hljs-symbol { 
             color: #4ec9b0 !important; 
         }
 
-        /* Custom scrollbars */
-        .blog-content pre::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
+        /* Operators */
+        .hljs-operator {
+            color: #d4d4d4 !important;
         }
-        .blog-content pre::-webkit-scrollbar-track {
-            background: #1e1e1e;
-            border-radius: 10px;
+
+        /* Language specific */
+        .hljs-meta {
+            color: #9cdcfe !important;
         }
-        .blog-content pre::-webkit-scrollbar-thumb {
-            background: #3c3c3c;
-            border-radius: 10px;
-        }
-        .blog-content pre::-webkit-scrollbar-thumb:hover {
-            background: #4b4b4b;
+
+        .hljs-literal {
+            color: #569cd6 !important;
         }
 
         /* Inline code in paragraphs */
         .blog-content p code,
-        .blog-content li code {
+        .blog-content li code,
+        .blog-content td code {
             background-color: #f1f3f5;
             color: #d63384;
             border-radius: 4px;
-            padding: 0.2rem 0.4rem;
+            padding: 0.3rem 0.6rem;
             font-family: 'Fira Code', Consolas, Monaco, 'Courier New', monospace;
             font-size: 0.9em;
             border: 1px solid #e9ecef;
@@ -193,6 +333,35 @@
         .sidebar-widget {
             position: sticky;
             top: 100px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .blog-content {
+                font-size: 1rem;
+            }
+
+            .blog-content h1 {
+                font-size: 1.8rem;
+            }
+
+            .blog-content h2 {
+                font-size: 1.5rem;
+            }
+
+            .blog-content p {
+                margin-bottom: 1.5rem;
+            }
+
+            .blog-content pre {
+                max-height: 500px !important;
+                padding: 1.5rem 1rem !important;
+            }
+
+            .code-footer {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -383,6 +552,7 @@
 
         /* =========================================================
            WRAP CODE BLOCKS WITH BADGE + FOOTER + COPY BUTTON
+           Supports all code languages and handles 10,000+ lines
            ========================================================= */
         function initCodeBlocks() {
             document.querySelectorAll('.blog-content pre').forEach(pre => {
@@ -394,7 +564,12 @@
                 // Detect language from class: "hljs language-javascript"
                 let lang = 'code';
                 const langMatch = code.className.match(/language-(\w+)/);
-                if (langMatch) lang = langMatch[1];
+                if (langMatch) {
+                    lang = langMatch[1].toLowerCase();
+                }
+
+                // Count lines for display
+                const lineCount = (code.innerText.match(/\n/g) || []).length + 1;
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'code-block-wrapper';
@@ -407,9 +582,12 @@
                 footer.className = 'code-footer';
                 footer.innerHTML = `
                     <span class="caution-text">Use code with caution.</span>
-                    <button class="copy-btn" aria-label="Copy code">
-                        <i class="far fa-copy"></i> <span>Copy</span>
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span class="line-count">${lineCount} lines</span>
+                        <button class="copy-btn" aria-label="Copy code">
+                            <i class="far fa-copy"></i> <span>Copy</span>
+                        </button>
+                    </div>
                 `;
 
                 const copyBtn = footer.querySelector('.copy-btn');
@@ -423,14 +601,23 @@
                             copyBtn.innerHTML = '<i class="far fa-copy"></i> <span>Copy</span>';
                         }, 2000);
                     } catch (err) {
-                        const range = document.createRange();
-                        range.selectNode(code);
-                        window.getSelection().removeAllRanges();
-                        window.getSelection().addRange(range);
-                        document.execCommand('copy');
-                        window.getSelection().removeAllRanges();
-                        copyBtn.innerHTML = '<i class="fas fa-check"></i> <span>Copied!</span>';
-                        setTimeout(() => copyBtn.innerHTML = '<i class="far fa-copy"></i> <span>Copy</span>', 2000);
+                        // Fallback for older browsers
+                        try {
+                            const range = document.createRange();
+                            range.selectNode(code);
+                            window.getSelection().removeAllRanges();
+                            window.getSelection().addRange(range);
+                            document.execCommand('copy');
+                            window.getSelection().removeAllRanges();
+                            copyBtn.classList.add('copied');
+                            copyBtn.innerHTML = '<i class="fas fa-check"></i> <span>Copied!</span>';
+                            setTimeout(() => {
+                                copyBtn.classList.remove('copied');
+                                copyBtn.innerHTML = '<i class="far fa-copy"></i> <span>Copy</span>';
+                            }, 2000);
+                        } catch (fallbackErr) {
+                            console.error('Copy failed:', fallbackErr);
+                        }
                     }
                 });
 
