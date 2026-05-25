@@ -8,33 +8,32 @@ const cloudinaryUpload = require("../middlewares/CloudinaryUploads");
 router.use(restrictToLoggedInUserOnly);
 
 // ====================== GET USER PROFILE ======================
-router.get("/", async (req, res) => {
+// ====================== VIEW PROFILE ======================
+router.get("/", restrictToLoggedInUserOnly, async (req, res) => {
     try {
-        const { search } = req.query;
-        const filter = { createdBy: req.user._id };
+        // This is the fix: actively populating followers and following data fields
+        const fullUser = await User.findById(req.user._id)
+            .populate("followers", "fullName email profileImageURL bio")
+            .populate("following", "fullName email profileImageURL bio");
 
-        if (search) {
-            filter.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { body: { $regex: search, $options: "i" } }
-            ];
+        if (!fullUser) {
+            return res.status(404).send("User not found");
         }
 
-        const userBlogs = await Blog.find(filter)
-            .sort({ createdAt: -1 })
-            .lean();
+        // Fetch blogs authored by this specific user
+        const blogs = await Blog.find({ createdBy: req.user._id, isDeleted: false })
+            .sort({ createdAt: -1 });
 
+        // Render profile view with the fully populated data structures
         res.render("profile", {
-            user: req.user,
-            blogs: userBlogs,
-            search: search || ""
+            user: fullUser,
+            blogs: blogs || []
         });
     } catch (error) {
-        console.error("Profile Error:", error);
-        res.status(500).send("Server Error");
+        console.error("🚨 Profile Route Error:", error.message);
+        res.status(500).send("Internal Server Error");
     }
 });
-
 // ====================== GET EDIT PROFILE PAGE ======================
 router.get("/edit", async (req, res) => {
     try {
