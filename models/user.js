@@ -4,7 +4,11 @@ const { createHmac, randomBytes } = require("crypto");
 const { creatTokenForUser } = require("../services/authentication");
 
 const UserSchema = new Schema({
-    fullName: { type: String, required: true },
+    fullName: { 
+        type: String, 
+        required: true,
+        trim: true 
+    },
     email: { 
         type: String, 
         required: true, 
@@ -14,12 +18,26 @@ const UserSchema = new Schema({
     },
     salt: { type: String },
     password: { type: String },
-    googleId: { type: String, unique: true, sparse: true },
-    profileImageURL: { type: String, default: "/imgs/default.png" },
+    googleId: { 
+        type: String, 
+        unique: true, 
+        sparse: true 
+    },
+    profileImageURL: { 
+        type: String, 
+        default: "/imgs/default.png" 
+    },
     
-    // New: User profile enhancements
-    bio: { type: String, default: "", maxlength: 500 },
-    website: { type: String, default: "" },
+    // Profile Enhancements
+    bio: { 
+        type: String, 
+        default: "", 
+        maxlength: 500 
+    },
+    website: { 
+        type: String, 
+        default: "" 
+    },
     
     role: { 
         type: String, 
@@ -27,18 +45,23 @@ const UserSchema = new Schema({
         default: "USER" 
     },
     
-    // New: Theme preference
     theme: {
         type: String,
         enum: ["light", "dark"],
         default: "light"
     },
     
-    // New: Followers system
-    followers: [{ type: Schema.Types.ObjectId, ref: "user" }],
-    following: [{ type: Schema.Types.ObjectId, ref: "user" }],
+    // Social Features
+    followers: [{ 
+        type: Schema.Types.ObjectId, 
+        ref: "user" 
+    }],
+    following: [{ 
+        type: Schema.Types.ObjectId, 
+        ref: "user" 
+    }],
     
-    // New: Notifications preferences
+    // Notification Settings
     notificationSettings: {
         emailOnComment: { type: Boolean, default: true },
         emailOnNewFollower: { type: Boolean, default: true },
@@ -47,26 +70,24 @@ const UserSchema = new Schema({
     
 }, { timestamps: true });
 
-// Indexes
+// ====================== INDEXES ======================
 UserSchema.index({ email: 1 });
 UserSchema.index({ followers: 1 });
 UserSchema.index({ following: 1 });
 
-// Virtual for follower count
+// ====================== VIRTUALS ======================
 UserSchema.virtual("followerCount").get(function() {
-    return this.followers.length;
+    return this.followers ? this.followers.length : 0;
 });
 
-// Virtual for following count
 UserSchema.virtual("followingCount").get(function() {
-    return this.following.length;
+    return this.following ? this.following.length : 0;
 });
 
-// ====================== PASSWORD HASHING (MODERN ASYNC WAY) ======================
-UserSchema.pre("save", async function () {
-    // Skip for Google users or if password is not being set/changed
+// ====================== PASSWORD HASHING ======================
+UserSchema.pre("save", async function (next) {
     if (this.googleId || !this.password || !this.isModified("password")) {
-        return;
+        return next();
     }
 
     try {
@@ -75,9 +96,9 @@ UserSchema.pre("save", async function () {
         this.password = createHmac("sha256", salt)
             .update(this.password)
             .digest("hex");
+        next();
     } catch (error) {
-        console.error("❌ Password Hashing Error:", error);
-        throw error;
+        next(error);
     }
 });
 
@@ -101,22 +122,20 @@ UserSchema.static("findOrCreateGoogleUser", async function (profile) {
         const email = profile.emails[0].value.toLowerCase();
         const googleId = profile.id;
 
-        console.log(`🔍 Google Login Attempt: ${email}`);
-
         let user = await this.findOne({ googleId });
 
         if (!user) {
             user = await this.findOne({ email });
 
             if (user) {
-                console.log(`🔗 Linking Google to existing user: ${email}`);
+                // Link Google to existing account
                 user.googleId = googleId;
                 if (profile.photos?.[0]?.value) {
                     user.profileImageURL = profile.photos[0].value;
                 }
                 await user.save();
             } else {
-                console.log(`🆕 Creating new Google user: ${email}`);
+                // Create new user
                 user = await this.create({
                     fullName: profile.displayName || "Google User",
                     email: email,
@@ -133,7 +152,7 @@ UserSchema.static("findOrCreateGoogleUser", async function (profile) {
     }
 });
 
-// ====================== INSTANCE METHODS ======================
+// ====================== FOLLOW METHODS ======================
 UserSchema.methods.followUser = async function(userId) {
     if (!this.following.includes(userId)) {
         this.following.push(userId);
@@ -162,5 +181,7 @@ UserSchema.methods.removeFollower = async function(userId) {
     await this.save();
 };
 
+// ====================== CREATE MODEL ======================
 const User = mongoose.models.user || model("user", UserSchema);
+
 module.exports = User;
