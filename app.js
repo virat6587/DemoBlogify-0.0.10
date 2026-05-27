@@ -3,33 +3,54 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const passport = require("passport");
+const { graphqlHTTP } = require("express-graphql");
+
+// Markdown Parsing and Visual Highlighting Extensions
+const { Marked } = require("marked");
+const { markedHighlight } = require("marked-highlight");
+const hljs = require("highlight.js");
 
 const UserRoute = require("./routes/User");
 const GoogleAuthRoute = require("./routes/GoogleAuthentication");
 const BlogRoute = require("./routes/Blog");
 const AdminRoute = require("./routes/Admin");
 const ProfileRoute = require("./routes/Profile");
+const CommentRoute = require("./routes/Comment");
+const FollowRoute = require("./routes/Follow");
+const NotificationRoute = require("./routes/Notification");
+const AnalyticsRoute = require("./routes/Analytics");
 
 const { checkForAuthenticationCookie } = require("./middlewares/authentication");
+const { queryHandler } = require("./middlewares/queryParams");
+const { apiLimiter } = require("./middlewares/rateLimiting");
+const { schema, root } = require("./graphql/schema");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// ====================== LOAD ENVIRONMENT VARIABLES ======================
-require("dotenv").config();   // Always load first - Critical for Render
+require("dotenv").config();
 
-console.log("🔧 ENV Check - EMAIL_USER:", !!process.env.EMAIL_USER);
-console.log("🔧 ENV Check - EMAIL_PASSWORD:", process.env.EMAIL_PASSWORD ? "Loaded" : "Missing");
+// Initialize Marked Parser configured to pass code explicitly to Highlight.js
+const marked = new Marked(
+    markedHighlight({
+        emptyLangClass: 'hljs',
+        langPrefix: 'hljs language-',
+        highlight(code, lang) {
+            const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+            return hljs.highlight(code, { language }).value;
+        }
+    })
+);
 
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI;
-if (MONGODB_URI) {
-    mongoose.connect(MONGODB_URI)
-        .then(() => console.log("✅ MongoDB Connected"))
-        .catch(err => console.error("❌ MongoDB Error:", err.message));
-}
+// ====================== MONGODB CONNECTION ======================
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/blogify")
+    .then(() => console.log("âœ… MongoDB Connected"))
+    .catch(err => {
+        console.error("âŒ MongoDB Connection Error:", err.message);
+        process.exit(1);
+    });
 
-// Middleware Setup
+// ====================== MIDDLEWARE ======================
 app.set("view engine", "ejs");
 app.set("views", path.resolve("./views"));
 
@@ -38,24 +59,144 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.resolve("./public")));
 
+// Security headers
+app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    next();
+});
+
 app.use(passport.initialize());
 app.use(checkForAuthenticationCookie("token"));
+app.use(queryHandler);
+app.use("/api/", apiLimiter);
+
+// ====================== GLOBAL EJS HELPERS ======================
+app.locals.truncate = function(text, length = 60) {
+    if (!text) return '';
+    text = String(text);
+    if (text.length <= length) return text;
+    return text.substring(0, length).trim() + '...';
+};
+
+app.locals.formatDate = function(date) {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+};
+
+/**
+ * Global Helper Engine
+ * Clears database formatting flags, stabilizes code block segments, 
+ * escapes raw symbols safely, and returns syntactically styled HTML strings.
+ */
+app.locals.renderMarkdown = function(rawContent) {
+    if (!rawContent) return '';
+    
+    let contentString = String(rawContent);
+
+    // 1. ISOLATE CODE BLOCKS: Extract all backtick sections to protect code contents from debris filters
+    const codeBlocks = [];
+    contentString = contentString.replace(/```([\s\S]*?)```/g, (match) => {
+        codeBlocks.push(match);
+        return `__BLOGIFY_CODE_BLOCK_PLACEHOLDER_${codeBlocks.length - 1}__`;
+    });
+
+    // 2. CLEAN SYSTEMIC DEBRIS: Safe execution only applied to markdown body text structure
+    contentString = contentString
+        .replace(/\/ppbr\/pp/g, '\n\n')
+        .replace(/\/ppbr\/ph2/g, '\n\n## ')
+        .replace(/\/ppbr\/ph/g, '\n\n# ')
+        .replace(/\/pp/g, '\n')
+        .replace(/\/h2pbr\/pp/g, '\n## ')
+        .replace(/\/strongpbr\/ph2/g, '\n\n## ')
+        .replace(/\/li\/ul/g, '')
+        .replace(/\/li/g, '\n* ')
+        .replace(/pbr\/pul/g, '\n\n')
+        .replace(/pbr\/p/g, '\n')
+        .replace(/<\/strong>/g, '**')
+        .replace(/<strong>/g, '**');
+
+    // 3. RESTORE CODE BLOCKS: Re-insert pure unescaped code snippets back into place for Marked + Highlight.js
+    contentString = contentString.replace(/__BLOGIFY_CODE_BLOCK_PLACEHOLDER_(\d+)__/g, (match, index) => {
+        return codeBlocks[parseInt(index)];
+    });
+
+    // 4. COMPILE STRUCTURES: Let marked parse blocks cleanly and auto-escape elements contextually
+    return marked.parse(contentString);
+};
+// ============================================================
+
+// ====================== GRAPHQL ENDPOINT ======================
+app.use("/graphql", graphqlHTTP((req) => ({
+    schema: schema,
+    rootValue: root,
+    graphiql: true,
+    context: { user: req.user }
+})));
 
 // ====================== HOME ROUTE ======================
 app.get("/", async (req, res) => {
     try {
         const Blog = require("./models/Blog");
-        const allBlogs = await Blog.find({})
-            .sort({ createdAt: -1 })
+        const { search = '', sort = 'newest', page = 1, limit = 9 } = req.queryParams || {};
+
+        const filter = {
+            isDeleted: false,
+            status: "published"
+        };
+
+        if (search) {
+            filter.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { body: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        let sortOption = { createdAt: -1 };
+        if (sort === "oldest") sortOption = { createdAt: 1 };
+        if (sort === "title") sortOption = { title: 1 };
+        if (sort === "trending") sortOption = { viewCount: -1 };
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const blogs = await Blog.find(filter)
+            .sort(sortOption)
+            .skip(skip)
+            .limit(parseInt(limit))
             .populate("createdBy", "fullName profileImageURL")
             .lean();
 
-        res.render("home", { 
+        const totalBlogs = await Blog.countDocuments(filter);
+        const totalPages = Math.ceil(totalBlogs / limit);
+
+        const featuredBlogs = await Blog.find({
+            isFeatured: true,
+            status: "published",
+            isDeleted: false
+        })
+            .sort({ featuredRank: 1 })
+            .limit(3)
+            .populate("createdBy", "fullName profileImageURL")
+            .lean();
+
+        res.render("home", {
+            title: "Blogify",
             user: req.user || null,
-            blogs: allBlogs || [] 
+            blogs: blogs || [],
+            featuredBlogs,
+            currentPage: parseInt(page),
+            totalPages,
+            totalBlogs,
+            search,
+            sort
         });
     } catch (error) {
-        console.error("Home Route Error:", error);
+        console.error("ðŸš¨ Home Route Error:", error.message);
         res.status(500).send("Internal Server Error");
     }
 });
@@ -63,13 +204,26 @@ app.get("/", async (req, res) => {
 // ====================== ROUTES ======================
 app.use("/admin", AdminRoute);
 app.use("/user/profile", ProfileRoute);
-app.use("/user", UserRoute);           // Normal signup/signin + OTP
-app.use("/user", GoogleAuthRoute);     // Google OAuth
+app.use("/user", UserRoute);
+app.use("/user", GoogleAuthRoute);
 app.use("/blogs", BlogRoute);
+app.use("/comments", CommentRoute);
+app.use("/follow", FollowRoute);
+app.use("/notifications", NotificationRoute);
+app.use("/analytics", AnalyticsRoute);
 
-// Start Server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+// ====================== 404 HANDLER ======================
+app.use((req, res) => {
+    res.status(404).render("404");
 });
 
-module.exports = app;
+// ====================== ERROR HANDLER ======================
+app.use((err, req, res, next) => {
+    console.error("ðŸš¨ Server Error:", err);
+    res.status(500).send("Internal Server Error");
+});
+
+app.listen(PORT, () => {
+    console.log(`âœ… Server running on port ${PORT}`);
+    console.log(`ðŸŒ Visit http://localhost:${PORT}`);
+});
