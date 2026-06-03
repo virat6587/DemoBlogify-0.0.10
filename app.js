@@ -1,14 +1,24 @@
+
 const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const passport = require("passport");
-const { graphqlHTTP } = require("express-graphql");
+const { createHandler } = require("graphql-http/lib/use/express");
 
 // Markdown Parsing and Visual Highlighting Extensions
 const { Marked } = require("marked");
 const { markedHighlight } = require("marked-highlight");
 const hljs = require("highlight.js");
+
+// ====================== SUPPRESS MONGOOSE WARNINGS ======================
+// Suppress duplicate schema index warnings
+process.on('warning', (warning) => {
+    if (warning.code === 'MONGOOSE' && warning.message.includes('Duplicate schema index')) {
+        return; // Silently ignore duplicate index warnings
+    }
+    console.warn(warning);
+});
 
 const UserRoute = require("./routes/User");
 const GoogleAuthRoute = require("./routes/GoogleAuthentication");
@@ -118,8 +128,8 @@ app.locals.renderMarkdown = function(rawContent) {
         .replace(/\/li/g, '\n* ')
         .replace(/pbr\/pul/g, '\n\n')
         .replace(/pbr\/p/g, '\n')
-        .replace(/<\/strong>/g, '**')
-        .replace(/<strong>/g, '**');
+        .replace(/<<\/strong>/g, '**')
+        .replace(/<<strong>/g, '**');
 
     // 3. RESTORE CODE BLOCKS: Re-insert pure unescaped code snippets back into place for Marked + Highlight.js
     contentString = contentString.replace(/__BLOGIFY_CODE_BLOCK_PLACEHOLDER_(\d+)__/g, (match, index) => {
@@ -132,12 +142,13 @@ app.locals.renderMarkdown = function(rawContent) {
 // ============================================================
 
 // ====================== GRAPHQL ENDPOINT ======================
-app.use("/graphql", graphqlHTTP((req) => ({
+// graphql-http is the official, spec-compliant replacement for express-graphql
+// It does NOT include GraphiQL by design. If you need the IDE, add a separate route.
+app.all("/graphql", createHandler({
     schema: schema,
     rootValue: root,
-    graphiql: true,
-    context: { user: req.user }
-})));
+    context: (req) => ({ user: req.raw.user })
+}));
 
 // ====================== HOME ROUTE ======================
 app.get("/", async (req, res) => {
@@ -230,4 +241,3 @@ app.listen(PORT, () => {
     console.log(`🌐 Visit http://localhost:${PORT}`);
 });
 module.exports = app;
-
