@@ -47,12 +47,7 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/blogify")
     .then(() => console.log("✅ MongoDB Connected"))
     .catch(err => {
         console.error("❌ MongoDB Connection Error:", err.message);
-        // Soft fail in production to prevent Render deployment crashes if DB drops momentarily
-        if (process.env.NODE_ENV === "production") {
-            console.warn("⚠️ Warning: App keeping process alive despite DB connection failure.");
-        } else {
-            process.exit(1);
-        }
+        process.exit(1);
     });
 
 // ====================== MIDDLEWARE ======================
@@ -148,6 +143,7 @@ app.use("/graphql", graphqlHTTP((req) => ({
 app.get("/", async (req, res) => {
     try {
         const Blog = require("./models/Blog");
+        // Safe fallback to req.query if queryParams is not available
         const queryParams = req.queryParams || req.query || {};
         const { search = '', sort = 'newest', page = 1, limit = 9 } = queryParams;
 
@@ -233,5 +229,5 @@ app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`🌐 Visit http://localhost:${PORT}`);
 });
-
 module.exports = app;
+
