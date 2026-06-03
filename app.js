@@ -1,4 +1,3 @@
-
 const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
@@ -42,6 +41,19 @@ const marked = new Marked(
         }
     })
 );
+
+// ====================== MONGODB CONNECTION ======================
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/blogify")
+    .then(() => console.log("✅ MongoDB Connected"))
+    .catch(err => {
+        console.error("❌ MongoDB Connection Error:", err.message);
+        // Soft fail in production to prevent Render deployment crashes if DB drops momentarily
+        if (process.env.NODE_ENV === "production") {
+            console.warn("⚠️ Warning: App keeping process alive despite DB connection failure.");
+        } else {
+            process.exit(1);
+        }
+    });
 
 // ====================== MIDDLEWARE ======================
 app.set("view engine", "ejs");
@@ -122,6 +134,7 @@ app.locals.renderMarkdown = function(rawContent) {
     // 4. COMPILE STRUCTURES: Let marked parse blocks cleanly and auto-escape elements contextually
     return marked.parse(contentString);
 };
+// ============================================================
 
 // ====================== GRAPHQL ENDPOINT ======================
 app.use("/graphql", graphqlHTTP((req) => ({
@@ -216,18 +229,9 @@ app.use((err, req, res, next) => {
     res.status(500).send("Internal Server Error");
 });
 
-// ====================== MONGODB CONNECTION & SERVER START ======================
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/blogify")
-    .then(() => {
-        console.log("✅ MongoDB Connected");
-        app.listen(PORT, () => {
-            console.log(`✅ Server running on port ${PORT}`);
-            console.log(`🌐 Visit http://localhost:${PORT}`);
-        });
-    })
-    .catch(err => {
-        console.error("❌ MongoDB Connection Error:", err.message);
-        process.exit(1); 
-    });
+app.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`🌐 Visit http://localhost:${PORT}`);
+});
 
 module.exports = app;
