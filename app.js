@@ -229,4 +229,3 @@ app.listen(PORT, () => {
     console.log(`âœ… Server running on port ${PORT}`);
     console.log(`ðŸŒ Visit http://localhost:${PORT}`);
 });
-module.exports = app;
