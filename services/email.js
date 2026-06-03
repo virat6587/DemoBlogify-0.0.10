@@ -2,9 +2,15 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 // ====================== VALIDATE EMAIL CONFIG ======================
+console.log("\n🔍 Email Configuration Check:");
+console.log(`📧 EMAIL_USER: ${process.env.EMAIL_USER}`);
+console.log(`📧 EMAIL_PASSWORD set: ${!!process.env.EMAIL_PASSWORD}`);
+console.log(`📧 EMAIL_PASSWORD length: ${process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.length : 0}`);
+
 if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-    console.error("❌ CRITICAL: EMAIL_USER or EMAIL_PASSWORD not set in .env file");
-    console.error("❌ Please add EMAIL_USER and EMAIL_PASSWORD to .env");
+    console.error("\n❌ CRITICAL ERROR ❌");
+    console.error("Missing EMAIL_USER or EMAIL_PASSWORD in .env file");
+    console.error("Please add them and restart the server\n");
 }
 
 // ====================== GMAIL TRANSPORTER SETUP ======================
@@ -13,31 +19,43 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
-    },
-    tls: {
-        rejectUnauthorized: false
     }
 });
 
-// Verify transporter connection on startup with detailed logging
+// Verify transporter connection on startup
+console.log("\n📧 Testing Gmail SMTP Connection...\n");
+
 transporter.verify((error, success) => {
     if (error) {
-        console.error("\n❌ ============= EMAIL SERVICE ERROR =============");
-        console.error("❌ Failed to connect to Gmail SMTP");
-        console.error("❌ Error Message:", error.message);
-        console.error("❌ Error Code:", error.code);
-        console.error("❌ Error Command:", error.command);
-        console.error("❌ EMAIL_USER:", process.env.EMAIL_USER);
-        console.error("❌ EMAIL_PASSWORD length:", process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.length : "NOT SET");
-        console.error("❌ EMAIL_PASSWORD (first 5 chars):", process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.substring(0, 5) : "NOT SET");
-        console.error("❌ Has spaces in password:", process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.includes(' ') : "N/A");
+        console.error("\n❌ ============================================");
+        console.error("❌          EMAIL SERVICE FAILED");
+        console.error("❌ ============================================");
+        console.error(`❌ Error: ${error.message}`);
+        console.error(`❌ Code: ${error.code}`);
+        
+        if (error.code === 'EAUTH') {
+            console.error("\n⚠️  AUTHENTICATION ERROR - Your credentials are wrong!");
+            console.error("\n📋 SOLUTION STEPS:");
+            console.error("   1. Go to https://myaccount.google.com/security");
+            console.error("   2. Click '2-Step Verification' and enable it (if not already)");
+            console.error("   3. Go to https://myaccount.google.com/apppasswords");
+            console.error("   4. Select 'Mail' and 'Windows Computer'");
+            console.error("   5. Click 'Generate'");
+            console.error("   6. Copy the 16-character password (WITHOUT SPACES)");
+            console.error("   7. Update EMAIL_PASSWORD in .env with this password");
+            console.error("   8. Restart the server\n");
+        }
+        
+        console.error(`❌ Current EMAIL_USER: ${process.env.EMAIL_USER}`);
+        console.error(`❌ Current PASSWORD: ${process.env.EMAIL_PASSWORD ? '***' + process.env.EMAIL_PASSWORD.substring(process.env.EMAIL_PASSWORD.length - 4) : 'NOT SET'}`);
         console.error("❌ ============================================\n");
     } else {
-        console.log("\n✅ ============= EMAIL SERVICE READY =============");
-        console.log("✅ Connected to Gmail SMTP Successfully");
-        console.log("✅ Email User:", process.env.EMAIL_USER);
-        console.log("✅ Password length:", process.env.EMAIL_PASSWORD.length);
-        console.log("✅ =============================================\n");
+        console.log("\n✅ ============================================");
+        console.log("✅       EMAIL SERVICE CONNECTED");
+        console.log("✅ ============================================");
+        console.log(`✅ Email: ${process.env.EMAIL_USER}`);
+        console.log(`✅ Gmail SMTP is ready to send emails`);
+        console.log("✅ ============================================\n");
     }
 });
 
@@ -75,23 +93,26 @@ const sendOTPEmail = async (email, otp) => {
     };
 
     try {
-        console.log(`\n📧 ========== SENDING OTP EMAIL ==========`);
+        console.log(`\n📧 SENDING OTP`);
         console.log(`📧 To: ${email}`);
-        console.log(`📧 From: ${process.env.EMAIL_USER}`);
         console.log(`📧 OTP: ${otp}`);
         
         const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ OTP Email Sent Successfully!`);
-        console.log(`✅ Message ID: ${info.messageId}`);
-        console.log(`📧 =====================================\n`);
+        console.log(`✅ SUCCESS - OTP sent!`);
+        console.log(`✅ Message ID: ${info.messageId}\n`);
         return { success: true, message: 'OTP sent successfully' };
     } catch (error) {
-        console.error("\n❌ ========== OTP EMAIL FAILED ==========");
-        console.error("❌ Error Message:", error.message);
-        console.error("❌ Error Code:", error.code);
-        console.error("❌ Error Command:", error.command);
-        console.error("❌ Full Stack:", error.stack);
-        console.error("❌ =====================================\n");
+        console.error(`\n❌ FAILED TO SEND OTP`);
+        console.error(`❌ To: ${email}`);
+        console.error(`❌ Error: ${error.message}`);
+        console.error(`❌ Code: ${error.code}`);
+        
+        if (error.code === 'EAUTH') {
+            console.error(`\n⚠️  AUTHENTICATION FAILED`);
+            console.error(`Your Gmail credentials in .env are incorrect!`);
+            console.error(`Check the steps in the server console startup message\n`);
+        }
+        
         throw new Error(`Failed to send OTP: ${error.message}`);
     }
 };
@@ -142,18 +163,16 @@ const sendResetPasswordEmail = async (email, resetLink) => {
     };
 
     try {
-        console.log(`\n📧 ========== SENDING RESET EMAIL ==========`);
+        console.log(`\n📧 SENDING PASSWORD RESET EMAIL`);
         console.log(`📧 To: ${email}`);
         const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ Reset Password Email Sent Successfully!`);
-        console.log(`✅ Message ID: ${info.messageId}`);
-        console.log(`📧 =====================================\n`);
+        console.log(`✅ SUCCESS - Reset email sent!`);
+        console.log(`✅ Message ID: ${info.messageId}\n`);
         return { success: true, message: 'Reset link sent successfully' };
     } catch (error) {
-        console.error("\n❌ ========== RESET EMAIL FAILED ==========");
-        console.error("❌ Error Message:", error.message);
-        console.error("❌ Error Code:", error.code);
-        console.error("❌ =====================================\n");
+        console.error(`\n❌ FAILED TO SEND RESET EMAIL`);
+        console.error(`❌ To: ${email}`);
+        console.error(`❌ Error: ${error.message}\n`);
         throw new Error(`Failed to send reset email: ${error.message}`);
     }
 };
@@ -196,12 +215,11 @@ const sendCommentNotificationEmail = async (recipientEmail, data) => {
     };
 
     try {
-        console.log(`📧 Sending comment notification to: ${recipientEmail}`);
         await transporter.sendMail(mailOptions);
-        console.log(`✅ Comment notification sent successfully`);
+        console.log(`✅ Comment notification sent to ${recipientEmail}`);
         return { success: true };
     } catch (error) {
-        console.error("❌ Failed to send comment notification:", error.message);
+        console.error(`❌ Failed to send comment notification: ${error.message}`);
         throw error;
     }
 };
@@ -242,17 +260,16 @@ const sendFollowNotificationEmail = async (recipientEmail, data) => {
     };
 
     try {
-        console.log(`📧 Sending follow notification to: ${recipientEmail}`);
         await transporter.sendMail(mailOptions);
-        console.log(`✅ Follow notification sent successfully`);
+        console.log(`✅ Follow notification sent to ${recipientEmail}`);
         return { success: true };
     } catch (error) {
-        console.error("❌ Failed to send follow notification:", error.message);
+        console.error(`❌ Failed to send follow notification: ${error.message}`);
         throw error;
     }
 };
 
-// ====================== GENERIC SEND EMAIL (FOR OTHER PURPOSES) ======================
+// ====================== GENERIC SEND EMAIL ======================
 const sendEmail = async (to, subject, htmlContent) => {
     const mailOptions = {
         from: `"Blogify" <${process.env.EMAIL_USER}>`,
@@ -262,12 +279,11 @@ const sendEmail = async (to, subject, htmlContent) => {
     };
 
     try {
-        console.log(`📧 Sending email to: ${to}`);
         const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ Email sent successfully`);
+        console.log(`✅ Email sent to ${to}`);
         return { success: true, message: 'Email sent successfully' };
     } catch (error) {
-        console.error("❌ Failed to send email:", error.message);
+        console.error(`❌ Failed to send email: ${error.message}`);
         throw new Error(`Email service error: ${error.message}`);
     }
 };
