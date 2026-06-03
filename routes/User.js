@@ -11,6 +11,43 @@ const { validateEmail } = require('../middlewares/validation');
 const otpStore = new Map();
 const resetTokens = new Map();
 
+// ====================== TEST EMAIL ENDPOINT ======================
+router.post('/test-email', async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Email is required' 
+        });
+    }
+
+    try {
+        console.log(`\n🧪 ========== TESTING EMAIL SEND ==========`);
+        console.log(`🧪 Target Email: ${email}`);
+        console.log(`🧪 Sender Email: ${process.env.EMAIL_USER}`);
+        
+        const testOTP = '123456';
+        await sendOTPEmail(email, testOTP);
+        
+        return res.json({ 
+            success: true, 
+            message: `Test email sent to ${email}. Check your inbox!` 
+        });
+    } catch (error) {
+        console.error(`\n🧪 ========== TEST EMAIL FAILED ==========`);
+        console.error(`🧪 Error: ${error.message}`);
+        console.error(`🧪 Full Error:`, error);
+        
+        return res.status(500).json({ 
+            success: false, 
+            message: `Email test failed: ${error.message}`,
+            error: error.message,
+            code: error.code
+        });
+    }
+});
+
 // ====================== GET SIGNIN PAGE ======================
 router.get('/signin', (req, res) => {
     if (req.user) {
@@ -129,12 +166,13 @@ router.post('/send-otp', otpLimiter, async (req, res) => {
             console.error("\n❌ ========== OTP EMAIL ERROR ==========");
             console.error(`❌ Email: ${normalizedEmail}`);
             console.error(`❌ Error: ${emailError.message}`);
+            console.error(`❌ Error Code: ${emailError.code}`);
+            console.error(`❌ Error Response: ${emailError.response}`);
             console.error("❌ =====================================\n");
             
-            // Still return success for debugging, but indicate email service issue
             return res.status(500).json({ 
                 success: false, 
-                message: `Email service error: ${emailError.message}. Please check server logs.` 
+                message: `Email service error: ${emailError.message}. Error Code: ${emailError.code}` 
             });
         }
 
@@ -442,4 +480,3 @@ setInterval(() => {
 }, 5 * 60 * 1000); // Run every 5 minutes
 
 module.exports = router;
-
