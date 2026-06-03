@@ -17,23 +17,23 @@
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
-    "ejs": "^5.0.2",
-    "express": "^4.19.2",
-    "express-graphql": "^0.12.0",
-    "express-rate-limit": "^7.1.5",
-    "graphql": "^16.9.0",
-    "highlight.js": "^11.9.0",
-    "jsonwebtoken": "^9.0.3",
-    "marked": "^12.0.2",
-    "marked-highlight": "^2.1.1",
-    "mongoose": "^8.6.0",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "graphql": "^16.14.1",
+    "graphql-http": "^1.22.4",
+    "highlight.js": "^11.11.1",
+    "jsonwebtoken": "^9.0.2",
+    "marked": "^15.0.7",
+    "marked-highlight": "^2.2.1",
+    "mongoose": "^8.14.0",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
-    "nodemailer": "^6.9.7",
+    "nodemailer": "^6.10.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.10"
   }
 }
