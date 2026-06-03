@@ -1,4 +1,11 @@
 const nodemailer = require('nodemailer');
+require('dotenv').config();
+
+// ====================== VALIDATE EMAIL CONFIG ======================
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    console.error("❌ CRITICAL: EMAIL_USER or EMAIL_PASSWORD not set in .env file");
+    console.error("❌ Please add EMAIL_USER and EMAIL_PASSWORD to .env");
+}
 
 // ====================== GMAIL TRANSPORTER SETUP ======================
 const transporter = nodemailer.createTransport({
@@ -12,16 +19,25 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Verify transporter connection on startup
+// Verify transporter connection on startup with detailed logging
 transporter.verify((error, success) => {
     if (error) {
-        console.error("❌ Email Service Error:", error.message);
-        console.error("❌ Check your email credentials in .env file");
+        console.error("\n❌ ============= EMAIL SERVICE ERROR =============");
+        console.error("❌ Failed to connect to Gmail SMTP");
+        console.error("❌ Error Message:", error.message);
+        console.error("❌ Error Code:", error.code);
+        console.error("❌ Error Command:", error.command);
         console.error("❌ EMAIL_USER:", process.env.EMAIL_USER);
-        console.error("❌ EMAIL_PASSWORD is set:", !!process.env.EMAIL_PASSWORD);
+        console.error("❌ EMAIL_PASSWORD length:", process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.length : "NOT SET");
+        console.error("❌ EMAIL_PASSWORD (first 5 chars):", process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.substring(0, 5) : "NOT SET");
+        console.error("❌ Has spaces in password:", process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.includes(' ') : "N/A");
+        console.error("❌ ============================================\n");
     } else {
-        console.log("✅ Email Service Ready - Connected to Gmail");
+        console.log("\n✅ ============= EMAIL SERVICE READY =============");
+        console.log("✅ Connected to Gmail SMTP Successfully");
         console.log("✅ Email User:", process.env.EMAIL_USER);
+        console.log("✅ Password length:", process.env.EMAIL_PASSWORD.length);
+        console.log("✅ =============================================\n");
     }
 });
 
@@ -59,19 +75,24 @@ const sendOTPEmail = async (email, otp) => {
     };
 
     try {
-        console.log(`📧 Attempting to send OTP to: ${email}`);
+        console.log(`\n📧 ========== SENDING OTP EMAIL ==========`);
+        console.log(`📧 To: ${email}`);
         console.log(`📧 From: ${process.env.EMAIL_USER}`);
+        console.log(`📧 OTP: ${otp}`);
         
         const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ OTP Email Sent Successfully to ${email}`);
+        console.log(`✅ OTP Email Sent Successfully!`);
         console.log(`✅ Message ID: ${info.messageId}`);
+        console.log(`📧 =====================================\n`);
         return { success: true, message: 'OTP sent successfully' };
     } catch (error) {
-        console.error("❌ Failed to send OTP email:", error.message);
-        console.error("❌ Full Error:", error);
-        console.error("❌ Code:", error.code);
-        console.error("❌ Command:", error.command);
-        throw new Error(`Email service error: ${error.message}`);
+        console.error("\n❌ ========== OTP EMAIL FAILED ==========");
+        console.error("❌ Error Message:", error.message);
+        console.error("❌ Error Code:", error.code);
+        console.error("❌ Error Command:", error.command);
+        console.error("❌ Full Stack:", error.stack);
+        console.error("❌ =====================================\n");
+        throw new Error(`Failed to send OTP: ${error.message}`);
     }
 };
 
@@ -121,15 +142,19 @@ const sendResetPasswordEmail = async (email, resetLink) => {
     };
 
     try {
-        console.log(`📧 Attempting to send reset password email to: ${email}`);
+        console.log(`\n📧 ========== SENDING RESET EMAIL ==========`);
+        console.log(`📧 To: ${email}`);
         const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ Reset Password Email Sent to ${email}`);
+        console.log(`✅ Reset Password Email Sent Successfully!`);
         console.log(`✅ Message ID: ${info.messageId}`);
+        console.log(`📧 =====================================\n`);
         return { success: true, message: 'Reset link sent successfully' };
     } catch (error) {
-        console.error("❌ Failed to send reset password email:", error.message);
-        console.error("❌ Full Error:", error);
-        throw new Error(`Email service error: ${error.message}`);
+        console.error("\n❌ ========== RESET EMAIL FAILED ==========");
+        console.error("❌ Error Message:", error.message);
+        console.error("❌ Error Code:", error.code);
+        console.error("❌ =====================================\n");
+        throw new Error(`Failed to send reset email: ${error.message}`);
     }
 };
 
@@ -171,13 +196,12 @@ const sendCommentNotificationEmail = async (recipientEmail, data) => {
     };
 
     try {
-        console.log(`📧 Attempting to send comment notification to: ${recipientEmail}`);
+        console.log(`📧 Sending comment notification to: ${recipientEmail}`);
         await transporter.sendMail(mailOptions);
-        console.log(`✅ Comment Notification Email Sent to ${recipientEmail}`);
+        console.log(`✅ Comment notification sent successfully`);
         return { success: true };
     } catch (error) {
-        console.error("❌ Failed to send comment notification email:", error.message);
-        console.error("❌ Full Error:", error);
+        console.error("❌ Failed to send comment notification:", error.message);
         throw error;
     }
 };
@@ -218,13 +242,12 @@ const sendFollowNotificationEmail = async (recipientEmail, data) => {
     };
 
     try {
-        console.log(`📧 Attempting to send follow notification to: ${recipientEmail}`);
+        console.log(`📧 Sending follow notification to: ${recipientEmail}`);
         await transporter.sendMail(mailOptions);
-        console.log(`✅ Follow Notification Email Sent to ${recipientEmail}`);
+        console.log(`✅ Follow notification sent successfully`);
         return { success: true };
     } catch (error) {
-        console.error("❌ Failed to send follow notification email:", error.message);
-        console.error("❌ Full Error:", error);
+        console.error("❌ Failed to send follow notification:", error.message);
         throw error;
     }
 };
@@ -239,14 +262,12 @@ const sendEmail = async (to, subject, htmlContent) => {
     };
 
     try {
-        console.log(`📧 Attempting to send email to: ${to}`);
+        console.log(`📧 Sending email to: ${to}`);
         const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ Email Sent to ${to}`);
-        console.log(`✅ Message ID: ${info.messageId}`);
+        console.log(`✅ Email sent successfully`);
         return { success: true, message: 'Email sent successfully' };
     } catch (error) {
         console.error("❌ Failed to send email:", error.message);
-        console.error("❌ Full Error:", error);
         throw new Error(`Email service error: ${error.message}`);
     }
 };
