@@ -16,6 +16,7 @@ const transporter = nodemailer.createTransport({
 transporter.verify((error, success) => {
     if (error) {
         console.error("❌ Email Service Error:", error.message);
+        console.error("❌ Full Error:", error);
     } else {
         console.log("✅ Email Service Ready - Connected to Gmail");
     }
@@ -28,7 +29,7 @@ const sendOTPEmail = async (email, otp) => {
         to: email,
         subject: 'Your Signup OTP - Blogify',
         html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px;">
                 <div style="background-color: white; border-radius: 10px; padding: 30px; text-align: center;">
                     <h2 style="color: #667eea; margin: 0 0 10px 0;">Verify Your Email</h2>
                     <p style="color: #666; margin: 0 0 20px 0; font-size: 14px;">Use this code to complete your signup:</p>
@@ -60,6 +61,7 @@ const sendOTPEmail = async (email, otp) => {
         return { success: true, message: 'OTP sent successfully' };
     } catch (error) {
         console.error("❌ Failed to send OTP email:", error.message);
+        console.error("❌ Full Error:", error);
         throw new Error(`Email service error: ${error.message}`);
     }
 };
@@ -71,7 +73,7 @@ const sendResetPasswordEmail = async (email, resetLink) => {
         to: email,
         subject: 'Reset Your Blogify Password',
         html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px;">
                 <div style="background-color: white; border-radius: 10px; padding: 30px;">
                     <h2 style="color: #667eea; margin: 0 0 10px 0; text-align: center;">Password Reset Request</h2>
                     
@@ -80,7 +82,7 @@ const sendResetPasswordEmail = async (email, resetLink) => {
                     </p>
                     
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 14px 40px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; transition: opacity 0.3s ease;">
+                        <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 14px 40px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
                             Reset Password
                         </a>
                     </div>
@@ -115,6 +117,7 @@ const sendResetPasswordEmail = async (email, resetLink) => {
         return { success: true, message: 'Reset link sent successfully' };
     } catch (error) {
         console.error("❌ Failed to send reset password email:", error.message);
+        console.error("❌ Full Error:", error);
         throw new Error(`Email service error: ${error.message}`);
     }
 };
@@ -126,7 +129,7 @@ const sendCommentNotificationEmail = async (recipientEmail, data) => {
         to: recipientEmail,
         subject: `New comment on "${data.blogTitle}"`,
         html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px;">
                 <div style="background-color: white; border-radius: 10px; padding: 30px;">
                     <h2 style="color: #667eea; margin: 0 0 10px 0;">New Comment on Your Blog</h2>
                     
@@ -141,7 +144,7 @@ const sendCommentNotificationEmail = async (recipientEmail, data) => {
                     </div>
                     
                     <div style="text-align: center; margin: 20px 0;">
-                        <a href="${data.blogLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">
+                        <a href="${data.blogLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
                             View Blog & Reply
                         </a>
                     </div>
@@ -162,6 +165,7 @@ const sendCommentNotificationEmail = async (recipientEmail, data) => {
         return { success: true };
     } catch (error) {
         console.error("❌ Failed to send comment notification email:", error.message);
+        console.error("❌ Full Error:", error);
         throw error;
     }
 };
@@ -173,7 +177,7 @@ const sendFollowNotificationEmail = async (recipientEmail, data) => {
         to: recipientEmail,
         subject: `${data.followerName} started following you`,
         html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px;">
                 <div style="background-color: white; border-radius: 10px; padding: 30px; text-align: center;">
                     <h2 style="color: #667eea; margin: 0 0 10px 0;">New Follower</h2>
                     
@@ -186,7 +190,7 @@ const sendFollowNotificationEmail = async (recipientEmail, data) => {
                     </div>
                     
                     <div style="text-align: center; margin: 20px 0;">
-                        <a href="${data.profileLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">
+                        <a href="${data.profileLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
                             View Profile
                         </a>
                     </div>
@@ -207,6 +211,7 @@ const sendFollowNotificationEmail = async (recipientEmail, data) => {
         return { success: true };
     } catch (error) {
         console.error("❌ Failed to send follow notification email:", error.message);
+        console.error("❌ Full Error:", error);
         throw error;
     }
 };
@@ -226,6 +231,7 @@ const sendEmail = async (to, subject, htmlContent) => {
         return { success: true, message: 'Email sent successfully' };
     } catch (error) {
         console.error("❌ Failed to send email:", error.message);
+        console.error("❌ Full Error:", error);
         throw new Error(`Email service error: ${error.message}`);
     }
 };
