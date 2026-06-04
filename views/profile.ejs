@@ -7,6 +7,10 @@
 <body>
     <%- include("./partials/nave") %>
 
+    <%
+        const isOwnProfile = locals.user && locals.user._id.toString() === user._id.toString();
+    %>
+
     <!-- Profile Header -->
     <header class="bg-primary-soft border-bottom py-5">
         <div class="container">
@@ -34,10 +38,9 @@
                         </p>
                     <% } %>
                     
-                    <!-- Stats -->
                     <div class="d-flex gap-4">
                         <div>
-                            <h5 class="fw-bold">0</h5>
+                            <h5 class="fw-bold"><%= blogs ? blogs.length : 0 %></h5>
                             <small class="text-muted">Blogs</small>
                         </div>
                         <div>
@@ -53,11 +56,12 @@
 
                 <div class="col-md-auto">
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary" id="editProfileBtn">
-                            <i class="fas fa-edit"></i> Edit Profile
-                        </button>
-                        <% if (locals.user && locals.user._id != user._id) { %>
-                            <button class="btn btn-outline-primary" onclick="toggleFollow()">
+                        <% if (isOwnProfile) { %>
+                            <a href="/user/profile/edit" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> Edit Profile
+                            </a>
+                        <% } else if (locals.user) { %>
+                            <button class="btn btn-outline-primary" id="followBtn" onclick="toggleFollow()">
                                 <i class="fas fa-user-plus"></i> Follow
                             </button>
                         <% } %>
@@ -88,7 +92,7 @@
                     <i class="fas fa-heart"></i> Following
                 </button>
             </li>
-            <% if (locals.user && locals.user._id == user._id) { %>
+            <% if (isOwnProfile) { %>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" 
                             data-bs-target="#analytics" type="button" role="tab" aria-selected="false">
@@ -102,13 +106,14 @@
     <!-- Tab Content -->
     <div class="container mb-5">
         <div class="tab-content">
+
             <!-- Blogs Tab -->
             <div class="tab-pane fade show active" id="blogs" role="tabpanel">
-                <% if (typeof blogs !== 'undefined' && blogs.length === 0) { %>
+                <% if (!blogs || blogs.length === 0) { %>
                     <div class="text-center py-5">
                         <i class="fas fa-inbox fa-5x text-muted mb-3"></i>
                         <h4 class="text-muted">No blogs published yet</h4>
-                        <% if (locals.user && locals.user._id == user._id) { %>
+                        <% if (isOwnProfile) { %>
                             <a href="/blogs/add-new" class="btn btn-primary mt-3">
                                 <i class="fas fa-pen"></i> Write First Blog
                             </a>
@@ -139,7 +144,7 @@
                                             <% } %>
                                         </div>
 
-                                        <% if (locals.user && locals.user._id == user._id) { %>
+                                        <% if (isOwnProfile) { %>
                                             <div class="dropdown position-absolute top-0 start-0 m-2">
                                                 <button class="btn btn-sm btn-dark dropdown-toggle" data-bs-toggle="dropdown">
                                                     <i class="fas fa-ellipsis-v"></i>
@@ -165,7 +170,6 @@
                                             <%= truncate(blog.title, 60) %>
                                         </h5>
 
-                                        <!-- Tags -->
                                         <% if (blog.tags && blog.tags.length > 0) { %>
                                             <div class="mb-2">
                                                 <% blog.tags.slice(0, 2).forEach(tag => { %>
@@ -180,7 +184,6 @@
                                             <%= truncate(blog.excerpt || (blog.body ? blog.body.substring(0, 100) : ''), 80) %>
                                         </p>
 
-                                        <!-- Blog Stats -->
                                         <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                                             <small class="text-muted">
                                                 <i class="fas fa-calendar"></i> 
@@ -209,70 +212,72 @@
 
             <!-- Followers Tab -->
             <div class="tab-pane fade" id="followers" role="tabpanel">
-                <% if (user.followers && user.followers.length === 0) { %>
+                <% if (!user.followers || user.followers.length === 0) { %>
                     <div class="text-center py-5">
                         <i class="fas fa-user-friends fa-5x text-muted mb-3"></i>
                         <p class="text-muted">No followers yet</p>
                     </div>
                 <% } else { %>
                     <div class="row">
-                        <% if (user.followers) { %>
-                            <% user.followers.forEach(follower => { %>
-                                <div class="col-md-6 col-lg-4 mb-3">
-                                    <div class="card">
-                                        <div class="card-body text-center">
-                                            <img src="<%= follower.profileImageURL %>" 
-                                                 width="60" height="60" 
-                                                 class="rounded-circle mb-2"
-                                                 onerror="this.src='/imgs/default.png';">
-                                            <h6 class="fw-bold"><%= follower.fullName %></h6>
-                                            <p class="text-muted small"><%= follower.email %></p>
-                                            <button class="btn btn-sm btn-outline-primary w-100">
+                        <% user.followers.forEach(follower => { %>
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <img src="<%= follower.profileImageURL || '/imgs/default.png' %>" 
+                                             width="60" height="60" 
+                                             class="rounded-circle mb-2"
+                                             onerror="this.src='/imgs/default.png';">
+                                        <h6 class="fw-bold"><%= follower.fullName %></h6>
+                                        <p class="text-muted small"><%= follower.bio || '' %></p>
+                                        <% if (locals.user && follower._id.toString() !== locals.user._id.toString()) { %>
+                                            <button class="btn btn-sm btn-outline-primary w-100"
+                                                    onclick="toggleFollowUser('<%= follower._id %>', this)">
                                                 <i class="fas fa-user-plus"></i> Follow Back
                                             </button>
-                                        </div>
+                                        <% } %>
                                     </div>
                                 </div>
-                            <% }) %>
-                        <% } %>
+                            </div>
+                        <% }) %>
                     </div>
                 <% } %>
             </div>
 
             <!-- Following Tab -->
             <div class="tab-pane fade" id="following" role="tabpanel">
-                <% if (user.following && user.following.length === 0) { %>
+                <% if (!user.following || user.following.length === 0) { %>
                     <div class="text-center py-5">
                         <i class="fas fa-heart fa-5x text-muted mb-3"></i>
                         <p class="text-muted">Not following anyone yet</p>
                     </div>
                 <% } else { %>
                     <div class="row">
-                        <% if (user.following) { %>
-                            <% user.following.forEach(followee => { %>
-                                <div class="col-md-6 col-lg-4 mb-3">
-                                    <div class="card">
-                                        <div class="card-body text-center">
-                                            <img src="<%= followee.profileImageURL %>" 
-                                                 width="60" height="60" 
-                                                 class="rounded-circle mb-2"
-                                                 onerror="this.src='/imgs/default.png';">
-                                            <h6 class="fw-bold"><%= followee.fullName %></h6>
-                                            <p class="text-muted small"><%= followee.email %></p>
-                                            <button class="btn btn-sm btn-success w-100">
+                        <% user.following.forEach(followee => { %>
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <img src="<%= followee.profileImageURL || '/imgs/default.png' %>" 
+                                             width="60" height="60" 
+                                             class="rounded-circle mb-2"
+                                             onerror="this.src='/imgs/default.png';">
+                                        <h6 class="fw-bold"><%= followee.fullName %></h6>
+                                        <p class="text-muted small"><%= followee.bio || '' %></p>
+                                        <% if (locals.user && followee._id.toString() !== locals.user._id.toString()) { %>
+                                            <button class="btn btn-sm btn-success w-100"
+                                                    onclick="toggleFollowUser('<%= followee._id %>', this)">
                                                 <i class="fas fa-user-check"></i> Following
                                             </button>
-                                        </div>
+                                        <% } %>
                                     </div>
                                 </div>
-                            <% }) %>
-                        <% } %>
+                            </div>
+                        <% }) %>
                     </div>
                 <% } %>
             </div>
 
-            <!-- Analytics Tab (Only for own profile) -->
-            <% if (locals.user && locals.user._id == user._id) { %>
+            <!-- Analytics Tab (owner only) -->
+            <% if (isOwnProfile) { %>
                 <div class="tab-pane fade" id="analytics" role="tabpanel">
                     <div class="row">
                         <div class="col-md-6 col-lg-3 mb-3">
@@ -280,7 +285,7 @@
                                 <div class="card-body">
                                     <i class="fas fa-book fa-3x text-primary mb-3"></i>
                                     <h6 class="text-muted">Total Blogs</h6>
-                                    <h3 class="fw-bold" id="totalBlogs">0</h3>
+                                    <h3 class="fw-bold" id="totalBlogs">—</h3>
                                 </div>
                             </div>
                         </div>
@@ -289,7 +294,7 @@
                                 <div class="card-body">
                                     <i class="fas fa-eye fa-3x text-success mb-3"></i>
                                     <h6 class="text-muted">Total Views</h6>
-                                    <h3 class="fw-bold" id="totalViews">0</h3>
+                                    <h3 class="fw-bold" id="totalViews">—</h3>
                                 </div>
                             </div>
                         </div>
@@ -298,7 +303,7 @@
                                 <div class="card-body">
                                     <i class="fas fa-heart fa-3x text-danger mb-3"></i>
                                     <h6 class="text-muted">Total Likes</h6>
-                                    <h3 class="fw-bold" id="totalLikes">0</h3>
+                                    <h3 class="fw-bold" id="totalLikes">—</h3>
                                 </div>
                             </div>
                         </div>
@@ -307,27 +312,26 @@
                                 <div class="card-body">
                                     <i class="fas fa-comment fa-3x text-info mb-3"></i>
                                     <h6 class="text-muted">Total Comments</h6>
-                                    <h3 class="fw-bold" id="totalComments">0</h3>
+                                    <h3 class="fw-bold" id="totalComments">—</h3>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             <% } %>
+
         </div>
     </div>
 
     <%- include("./partials/scripts") %>
 
     <script>
-        const userId = '<%= user._id %>';
-        const currentUserId = '<%= locals.user ? locals.user._id : "" %>';
+        const profileUserId = '<%= user._id %>';
+        const currentUserId  = '<%= locals.user ? locals.user._id : "" %>';
 
-        // Delete Blog
         async function deleteBlog(id, event) {
             event.preventDefault();
             if (!await confirmAction('Are you sure you want to delete this blog?')) return;
-
             try {
                 const res = await axios.delete(`/blogs/${id}`);
                 if (res.data.success) {
@@ -339,53 +343,72 @@
             }
         }
 
-        // Toggle Follow
         async function toggleFollow() {
             if (!currentUserId) {
                 window.location.href = '/user/signin';
                 return;
             }
-
             try {
-                const res = await axios.post(`/follow/${userId}/follow`);
+                const res  = await axios.post(`/follow/${profileUserId}/follow`);
                 const data = res.data;
                 if (data.success) {
                     notify.success(data.message);
+                    const btn = document.getElementById('followBtn');
+                    if (data.following) {
+                        btn.innerHTML = '<i class="fas fa-user-check"></i> Following';
+                        btn.classList.replace('btn-outline-primary', 'btn-success');
+                    } else {
+                        btn.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+                        btn.classList.replace('btn-success', 'btn-outline-primary');
+                    }
                 }
             } catch (err) {
                 notify.error('Failed to follow user');
             }
         }
 
-        // Load Analytics
-        <% if (locals.user && locals.user._id == user._id) { %>
+        async function toggleFollowUser(targetId, btn) {
+            if (!currentUserId) {
+                window.location.href = '/user/signin';
+                return;
+            }
+            try {
+                const res  = await axios.post(`/follow/${targetId}/follow`);
+                const data = res.data;
+                if (data.success) {
+                    notify.success(data.message);
+                    if (data.following) {
+                        btn.innerHTML = '<i class="fas fa-user-check"></i> Following';
+                        btn.classList.replace('btn-outline-primary', 'btn-success');
+                    } else {
+                        btn.innerHTML = '<i class="fas fa-user-plus"></i> Follow Back';
+                        btn.classList.replace('btn-success', 'btn-outline-primary');
+                    }
+                }
+            } catch (err) {
+                notify.error('Failed to update follow status');
+            }
+        }
+
+        <% if (isOwnProfile) { %>
             async function loadAnalytics() {
                 try {
                     const res = await axios.get('/analytics/author/stats');
                     if (res.data.success) {
-                        const stats = res.data.stats;
-                        document.getElementById('totalBlogs').textContent = stats.totalBlogs;
-                        document.getElementById('totalViews').textContent = stats.totalViews;
-                        document.getElementById('totalLikes').textContent = stats.totalLikes;
-                        document.getElementById('totalComments').textContent = stats.totalComments;
+                        const s = res.data.stats;
+                        document.getElementById('totalBlogs').textContent    = s.totalBlogs    ?? 0;
+                        document.getElementById('totalViews').textContent    = s.totalViews    ?? 0;
+                        document.getElementById('totalLikes').textContent    = s.totalLikes    ?? 0;
+                        document.getElementById('totalComments').textContent = s.totalComments ?? 0;
                     }
                 } catch (err) {
                     console.error('Error loading analytics:', err);
                 }
             }
 
-            document.getElementById('analytics-tab').addEventListener('shown.bs.tab', loadAnalytics);
+            document.getElementById('analytics-tab')
+                    .addEventListener('shown.bs.tab', loadAnalytics);
         <% } %>
-
-        // Edit Profile
-        document.getElementById('editProfileBtn').addEventListener('click', () => {
-            if (currentUserId !== userId) {
-                notify.warning('You can only edit your own profile');
-                return;
-            }
-            // Navigate to edit profile page
-            window.location.href = '/user/profile/edit';
-        });
     </script>
 </body>
 </html>
