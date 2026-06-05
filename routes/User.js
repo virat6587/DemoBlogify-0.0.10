@@ -75,14 +75,13 @@ router.post('/signin', loginLimiter, async (req, res) => {
             });
         }
 
-        // Get token from User model
         const token = await User.matchPassword(email, password);
         
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000
         });
         
         res.status(200).json({ 
@@ -137,7 +136,6 @@ router.post('/send-otp', otpLimiter, async (req, res) => {
     try {
         const normalizedEmail = email.toLowerCase().trim();
 
-        // Check if user already exists
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             return res.status(409).json({
@@ -146,11 +144,9 @@ router.post('/send-otp', otpLimiter, async (req, res) => {
             });
         }
 
-        // Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const expires = Date.now() + 5 * 60 * 1000; // 5 minutes
+        const expires = Date.now() + 5 * 60 * 1000;
 
-        // Store OTP in memory
         otpStore.set(normalizedEmail, { otp, expires });
 
         console.log(`\n🔐 ========== OTP STORAGE ==========`);
@@ -159,7 +155,6 @@ router.post('/send-otp', otpLimiter, async (req, res) => {
         console.log(`🔐 Stored OTPs Count: ${otpStore.size}`);
         console.log(`🔐 ==================================\n`);
 
-        // Send OTP email with error handling
         try {
             await sendOTPEmail(normalizedEmail, otp);
         } catch (emailError) {
@@ -218,7 +213,6 @@ router.post('/signup', async (req, res) => {
             });
         }
 
-        // Verify OTP
         const stored = otpStore.get(normalizedEmail);
         
         console.log(`\n🔐 ========== OTP VERIFICATION ==========`);
@@ -249,7 +243,6 @@ router.post('/signup', async (req, res) => {
             });
         }
 
-        // Check if email already registered
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             return res.status(409).json({ 
@@ -258,17 +251,14 @@ router.post('/signup', async (req, res) => {
             });
         }
 
-        // Create new user
         const user = await User.create({
             fullName: fullName.trim(),
             email: normalizedEmail,
             password
         });
 
-        // Delete used OTP
         otpStore.delete(normalizedEmail);
 
-        // Create JWT token
         const token = creatTokenForUser(user);
 
         res.cookie("token", token, {
@@ -308,7 +298,6 @@ router.post('/forgot-password', async (req, res) => {
         const normalizedEmail = email.toLowerCase().trim();
         const user = await User.findOne({ email: normalizedEmail });
 
-        // Don't reveal if email exists (security best practice)
         if (!user) {
             return res.status(200).json({ 
                 success: true, 
@@ -316,22 +305,22 @@ router.post('/forgot-password', async (req, res) => {
             });
         }
 
-        // Generate reset token
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const tokenExpires = Date.now() + 30 * 60 * 1000; // 30 minutes
+        const tokenExpires = Date.now() + 30 * 60 * 1000;
 
         resetTokens.set(resetToken, { 
             email: normalizedEmail, 
             expires: tokenExpires 
         });
 
-        // Build reset link - FIX: Use correct base URL without trailing slash
-        const baseUrl = (process.env.APP_URL || `http://localhost:${process.env.PORT || 8000}`).replace(/\/+$/, '');
+        // FIX: Build reset link using request origin (works on Vercel & local)
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+        const host = req.headers['x-forwarded-host'] || req.headers.host;
+        const baseUrl = `${protocol}://${host}`;
         const resetLink = `${baseUrl}/user/reset-password?token=${resetToken}`;
         
         console.log(`🔗 Generated reset link: ${resetLink}`);
 
-        // Send reset password email with error handling
         try {
             await sendResetPasswordEmail(normalizedEmail, resetLink);
         } catch (emailError) {
@@ -432,11 +421,9 @@ router.post('/reset-password', async (req, res) => {
             });
         }
 
-        // Update password
         user.password = newPassword;
         await user.save();
 
-        // Delete used token
         resetTokens.delete(token);
 
         console.log(`🔐 Password reset successful for ${stored.email}`);
@@ -461,7 +448,6 @@ setInterval(() => {
     const now = Date.now();
     let otpCleaned = 0, tokenCleaned = 0;
 
-    // Clean expired OTPs
     for (const [email, data] of otpStore.entries()) {
         if (data.expires < now) {
             otpStore.delete(email);
@@ -469,7 +455,6 @@ setInterval(() => {
         }
     }
 
-    // Clean expired reset tokens
     for (const [token, data] of resetTokens.entries()) {
         if (data.expires < now) {
             resetTokens.delete(token);
@@ -480,6 +465,6 @@ setInterval(() => {
     if (otpCleaned > 0 || tokenCleaned > 0) {
         console.log(`🧹 Cleanup: Removed ${otpCleaned} expired OTPs, ${tokenCleaned} expired reset tokens`);
     }
-}, 5 * 60 * 1000); // Run every 5 minutes
+}, 5 * 60 * 1000);
 
 module.exports = router;
