@@ -97,35 +97,57 @@ router.get("/:id", async (req, res) => {
 
         if (!blog) return res.status(404).send("Blog not found");
 
-        // Track view
-        await AnalyticsService.trackView(blog._id, req.user?._id, "direct");
+        // ========== TRACK UNIQUE VIEW ==========
+        const viewerId = req.user ? req.user._id.toString() : req.ip;
+        const userAgent = req.headers['user-agent'] || '';
+        const viewerFingerprint = req.user ? viewerId : `${viewerId}_${Buffer.from(userAgent).toString('base64').substring(0, 16)}`;
+        
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        
+        const existingView = await Blog.findOne({
+            _id: blog._id,
+            'viewers.viewerId': viewerFingerprint,
+            'viewers.viewedAt': { $gte: twentyFourHoursAgo }
+        });
 
-        // Get related blogs
+        if (!existingView) {
+            await Blog.findByIdAndUpdate(blog._id, {
+                $addToSet: { 
+                    viewers: { 
+                        viewerId: viewerFingerprint, 
+                        viewedAt: new Date(),
+                        isAuthenticated: !!req.user
+                    } 
+                },
+                $inc: { viewCount: 1 }
+            });
+            await AnalyticsService.trackView(blog._id, req.user?._id, "direct");
+        }
+        
+        const updatedBlog = await Blog.findById(req.params.id)
+            .notDeleted()
+            .populate("createdBy", "fullName profileImageURL followers")
+            .lean();
+
         const relatedBlogs = await Blog.find({
             tags: { $in: blog.tags },
             _id: { $ne: blog._id },
             isDeleted: false,
             status: "published"
-        })
-            .limit(3)
-            .lean();
+        }).limit(3).lean();
 
-        // Get author's other blogs
         const authorBlogs = await Blog.find({
             createdBy: blog.createdBy._id,
             _id: { $ne: blog._id },
             isDeleted: false,
             status: "published"
-        })
-            .limit(3)
-            .lean();
+        }).limit(3).lean();
 
-        // Check if user likes this blog
-        const hasLiked = blog.likes.includes(req.user?._id);
+        const hasLiked = updatedBlog.likes.includes(req.user?._id);
 
         res.render("view", { 
             user: req.user, 
-            blog,
+            blog: updatedBlog,
             relatedBlogs,
             authorBlogs,
             hasLiked
