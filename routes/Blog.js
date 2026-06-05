@@ -21,12 +21,11 @@ router.post("/add-new", blogCreationLimiter, cloudinaryUpload.single("coverImage
     try {
         const { title, body, tags, category, status, metaDescription, excerpt } = req.body;
 
-        // Validate
         const validation = validateBlog(title, body, tags ? tags.split(",") : []);
         if (!validation.isValid) {
-            return res.render("addBlog", { 
-                user: req.user, 
-                error: validation.errors.join(", ") 
+            return res.render("addBlog", {
+                user: req.user,
+                error: validation.errors.join(", ")
             });
         }
 
@@ -44,7 +43,6 @@ router.post("/add-new", blogCreationLimiter, cloudinaryUpload.single("coverImage
             createdBy: req.user._id
         });
 
-        // Create analytics record
         await require("../models/BlogAnalytics").create({
             blog: newBlog._id,
             author: req.user._id
@@ -53,9 +51,9 @@ router.post("/add-new", blogCreationLimiter, cloudinaryUpload.single("coverImage
         res.redirect(`/blogs/${newBlog._id}`);
     } catch (error) {
         console.error("Blog Creation Error:", error);
-        res.render("addBlog", { 
-            user: req.user, 
-            error: "Something went wrong while creating the blog." 
+        res.render("addBlog", {
+            user: req.user,
+            error: "Something went wrong while creating the blog."
         });
     }
 });
@@ -67,20 +65,13 @@ router.get("/:id/edit", async (req, res) => {
             .notDeleted()
             .lean();
 
-        if (!blog) {
-            return res.status(404).send("Blog not found");
-        }
+        if (!blog) return res.status(404).send("Blog not found");
 
-        // Check ownership
         if (blog.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).send("You are not authorized to edit this blog");
         }
 
-        res.render("editBlog", { 
-            user: req.user, 
-            blog,
-            error: null 
-        });
+        res.render("editBlog", { user: req.user, blog, error: null });
     } catch (error) {
         console.error("Edit Blog Page Error:", error);
         res.status(500).send("Internal Server Error");
@@ -92,41 +83,65 @@ router.get("/:id", async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id)
             .notDeleted()
-            .populate("createdBy", "fullName profileImageURL followers")
+            // FIX: Added "bio" to populate so the sidebar author card renders correctly
+            .populate("createdBy", "fullName profileImageURL bio followers")
             .lean();
 
         if (!blog) return res.status(404).send("Blog not found");
 
-        // ========== TRACK UNIQUE VIEW ==========
+        // ========== TRACK UNIQUE VIEW (24-hour deduplication window) ==========
         const viewerId = req.user ? req.user._id.toString() : req.ip;
-        const userAgent = req.headers['user-agent'] || '';
-        const viewerFingerprint = req.user ? viewerId : `${viewerId}_${Buffer.from(userAgent).toString('base64').substring(0, 16)}`;
-        
+        const userAgent = req.headers["user-agent"] || "";
+        const viewerFingerprint = req.user
+            ? viewerId
+            : `${viewerId}_${Buffer.from(userAgent).toString("base64").substring(0, 16)}`;
+
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        
+
+        // FIX 1: Use $elemMatch so BOTH conditions apply to the SAME array element.
+        // Without $elemMatch, MongoDB only checks that the array contains an element
+        // matching each condition independently — they could be different elements,
+        // causing the deduplication check to fail silently.
         const existingView = await Blog.findOne({
             _id: blog._id,
-            'viewers.viewerId': viewerFingerprint,
-            'viewers.viewedAt': { $gte: twentyFourHoursAgo }
+            viewers: {
+                $elemMatch: {
+                    viewerId: viewerFingerprint,
+                    viewedAt: { $gte: twentyFourHoursAgo }
+                }
+            }
         });
 
         if (!existingView) {
+            // FIX 2: $addToSet doesn't deduplicate subdocuments that differ by even one
+            // field (e.g. viewedAt). It kept pushing new entries forever, growing the
+            // viewers array without bound. Instead: $pull the stale entry for this
+            // viewer (if any), then $push a fresh one — keeping one entry per viewer.
             await Blog.findByIdAndUpdate(blog._id, {
-                $addToSet: { 
-                    viewers: { 
-                        viewerId: viewerFingerprint, 
+                $pull: { viewers: { viewerId: viewerFingerprint } }
+            });
+
+            await Blog.findByIdAndUpdate(blog._id, {
+                $push: {
+                    viewers: {
+                        viewerId: viewerFingerprint,
                         viewedAt: new Date(),
                         isAuthenticated: !!req.user
-                    } 
+                    }
                 },
+                // FIX 3: viewCount is incremented ONLY here.
+                // AnalyticsService.trackView() has been fixed to NOT also increment it,
+                // which was causing every view to be counted twice.
                 $inc: { viewCount: 1 }
             });
+
             await AnalyticsService.trackView(blog._id, req.user?._id, "direct");
         }
-        
+        // =====================================================================
+
         const updatedBlog = await Blog.findById(req.params.id)
             .notDeleted()
-            .populate("createdBy", "fullName profileImageURL followers")
+            .populate("createdBy", "fullName profileImageURL bio followers")
             .lean();
 
         const relatedBlogs = await Blog.find({
@@ -143,17 +158,21 @@ router.get("/:id", async (req, res) => {
             status: "published"
         }).limit(3).lean();
 
-        const hasLiked = updatedBlog.likes.includes(req.user?._id);
+        // FIX 4: .includes() uses reference equality and always returns false for
+        // ObjectId objects. Use .some() with string comparison instead.
+        const hasLiked = req.user
+            ? updatedBlog.likes.some(id => id.toString() === req.user._id.toString())
+            : false;
 
-        res.render("view", { 
-            user: req.user, 
+        res.render("view", {
+            user: req.user,
             blog: updatedBlog,
             relatedBlogs,
             authorBlogs,
             hasLiked
         });
     } catch (error) {
-        console.error(error);
+        console.error("Single Blog Error:", error);
         res.status(500).send("Internal Server Error");
     }
 });
@@ -164,22 +183,17 @@ router.put("/:id", cloudinaryUpload.single("coverImage"), async (req, res) => {
         const { title, body, tags, category, status, metaDescription, excerpt } = req.body;
 
         const blog = await Blog.findById(req.params.id);
-        if (!blog) {
-            return res.status(404).json({ success: false, message: "Blog not found" });
-        }
+        if (!blog) return res.status(404).json({ success: false, message: "Blog not found" });
 
-        // Check ownership
         if (blog.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ success: false, message: "Not authorized" });
         }
 
-        // Validate
         const validation = validateBlog(title, body, tags ? tags.split(",") : []);
         if (!validation.isValid) {
             return res.status(400).json({ success: false, errors: validation.errors });
         }
 
-        // Update fields
         blog.title = sanitizeInput(title);
         blog.body = sanitizeInput(body);
         blog.tags = tags ? tags.split(",").map(t => t.trim()).filter(t => t) : [];
@@ -187,12 +201,9 @@ router.put("/:id", cloudinaryUpload.single("coverImage"), async (req, res) => {
         blog.status = status || "published";
         blog.metaDescription = sanitizeInput(metaDescription);
         blog.excerpt = sanitizeInput(excerpt);
-        if (req.file) {
-            blog.coverImageURL = req.file.path;
-        }
+        if (req.file) blog.coverImageURL = req.file.path;
 
         await blog.save();
-
         res.json({ success: true, blog });
     } catch (error) {
         console.error("Update Blog Error:", error);
@@ -204,17 +215,12 @@ router.put("/:id", cloudinaryUpload.single("coverImage"), async (req, res) => {
 router.delete("/:id", async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id);
+        if (!blog) return res.status(404).json({ success: false, message: "Blog not found" });
 
-        if (!blog) {
-            return res.status(404).json({ success: false, message: "Blog not found" });
-        }
-
-        // Check ownership
         if (blog.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ success: false, message: "Not authorized" });
         }
 
-        // Soft delete
         blog.isDeleted = true;
         blog.deletedAt = new Date();
         await blog.save();
@@ -230,19 +236,16 @@ router.delete("/:id", async (req, res) => {
 router.post("/:id/like", async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id);
+        if (!blog) return res.status(404).json({ success: false, message: "Blog not found" });
 
-        if (!blog) {
-            return res.status(404).json({ success: false, message: "Blog not found" });
-        }
-
-        const hasLiked = blog.likes.includes(req.user._id);
+        // Use .some() for correct ObjectId comparison (same fix as hasLiked above)
+        const hasLiked = blog.likes.some(id => id.toString() === req.user._id.toString());
 
         if (hasLiked) {
             blog.likes = blog.likes.filter(id => id.toString() !== req.user._id.toString());
         } else {
             blog.likes.push(req.user._id);
 
-            // Send notification to author
             if (blog.createdBy.toString() !== req.user._id.toString()) {
                 await NotificationService.createNotification(
                     blog.createdBy,
@@ -258,12 +261,7 @@ router.post("/:id/like", async (req, res) => {
         }
 
         await blog.save();
-
-        res.json({ 
-            success: true, 
-            liked: !hasLiked,
-            likeCount: blog.likes.length 
-        });
+        res.json({ success: true, liked: !hasLiked, likeCount: blog.likes.length });
     } catch (error) {
         console.error("Like Blog Error:", error);
         res.status(500).json({ success: false, message: "Failed to like blog" });
@@ -273,10 +271,10 @@ router.post("/:id/like", async (req, res) => {
 // ====================== GET FEATURED BLOGS ======================
 router.get("/featured/list", async (req, res) => {
     try {
-        const blogs = await Blog.find({ 
-            isFeatured: true, 
+        const blogs = await Blog.find({
+            isFeatured: true,
             status: "published",
-            isDeleted: false 
+            isDeleted: false
         })
             .sort({ featuredRank: 1, createdAt: -1 })
             .populate("createdBy", "fullName profileImageURL")
