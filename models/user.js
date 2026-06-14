@@ -51,14 +51,47 @@ const UserSchema = new Schema({
     default: "light"
   },
 
-  // Social Features
+  // ====================== PRIVACY ======================
+  isPrivate: {
+    type: Boolean,
+    default: false
+  },
+
+  // ====================== SOCIAL FEATURES (Refactored) ======================
+  // Users this person follows (accepted)
+  following: [{
+    type: Schema.Types.ObjectId,
+    ref: "user"
+  }],
+
+  // Users who follow this person (accepted) — kept as followers for backward compat
   followers: [{
     type: Schema.Types.ObjectId,
     ref: "user"
   }],
-  following: [{
-    type: Schema.Types.ObjectId,
-    ref: "user"
+
+  // Pending follow requests received (for private accounts)
+  pendingFollowers: [{
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "user"
+    },
+    requestedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+
+  // Users this person has requested to follow (pending outgoing)
+  pendingFollowing: [{
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "user"
+    },
+    requestedAt: {
+      type: Date,
+      default: Date.now
+    }
   }],
 
   // Notification Settings
@@ -68,7 +101,7 @@ const UserSchema = new Schema({
     emailDigest: { type: Boolean, default: true }
   },
 
-  // ====================== NEW: USER PREFERENCES ======================
+  // User Preferences
   preferences: {
     reading: {
       largeReaderFont: { type: Boolean, default: false },
@@ -95,6 +128,8 @@ const UserSchema = new Schema({
 UserSchema.index({ email: 1 });
 UserSchema.index({ followers: 1 });
 UserSchema.index({ following: 1 });
+UserSchema.index({ "pendingFollowers.user": 1 });
+UserSchema.index({ "pendingFollowing.user": 1 });
 
 // ====================== VIRTUALS ======================
 UserSchema.virtual("followerCount").get(function() {
@@ -103,6 +138,10 @@ UserSchema.virtual("followerCount").get(function() {
 
 UserSchema.virtual("followingCount").get(function() {
   return this.following ? this.following.length : 0;
+});
+
+UserSchema.virtual("pendingFollowerCount").get(function() {
+  return this.pendingFollowers ? this.pendingFollowers.length : 0;
 });
 
 // ====================== PASSWORD HASHING ======================
@@ -171,9 +210,78 @@ UserSchema.static("findOrCreateGoogleUser", async function (profile) {
   }
 });
 
-// ====================== FOLLOW METHODS ======================
+// ====================== FOLLOW METHODS (Updated for Privacy) ======================
+
+// Check if following (accepted)
+UserSchema.methods.isFollowing = function(userId) {
+  return this.following.some(id => id.toString() === userId.toString());
+};
+
+// Check if user is a follower (accepted)
+UserSchema.methods.isFollower = function(userId) {
+  return this.followers.some(id => id.toString() === userId.toString());
+};
+
+// Check if there's a pending follow request TO this user
+UserSchema.methods.hasPendingRequestFrom = function(userId) {
+  return this.pendingFollowers.some(p => p.user.toString() === userId.toString());
+};
+
+// Check if this user has a pending request TO another user
+UserSchema.methods.hasPendingRequestTo = function(userId) {
+  return this.pendingFollowing.some(p => p.user.toString() === userId.toString());
+};
+
+// Check if mutual followers (both follow each other — accepted)
+UserSchema.methods.isMutualFollower = function(userId) {
+  const theyFollowMe = this.followers.some(id => id.toString() === userId.toString());
+  const iFollowThem = this.following.some(id => id.toString() === userId.toString());
+  return theyFollowMe && iFollowThem;
+};
+
+// Check if visitor is an accepted follower (or owner)
+UserSchema.methods.isAcceptedFollower = function(userId) {
+  return this.followers.some(id => id.toString() === userId.toString());
+};
+
+// Add pending follow request
+UserSchema.methods.addPendingFollower = async function(userId) {
+  if (!this.hasPendingRequestFrom(userId)) {
+    this.pendingFollowers.push({ user: userId, requestedAt: new Date() });
+    await this.save();
+  }
+};
+
+// Remove pending follow request
+UserSchema.methods.removePendingFollower = async function(userId) {
+  this.pendingFollowers = this.pendingFollowers.filter(
+    p => p.user.toString() !== userId.toString()
+  );
+  await this.save();
+};
+
+// Accept follow request: move from pending to followers
+UserSchema.methods.acceptFollower = async function(userId) {
+  this.pendingFollowers = this.pendingFollowers.filter(
+    p => p.user.toString() !== userId.toString()
+  );
+  if (!this.isFollower(userId)) {
+    this.followers.push(userId);
+  }
+  await this.save();
+};
+
+// Reject follow request
+UserSchema.methods.rejectFollower = async function(userId) {
+  this.pendingFollowers = this.pendingFollowers.filter(
+    p => p.user.toString() !== userId.toString()
+  );
+  await this.save();
+};
+
+// Legacy follow (public account — instant)
 UserSchema.methods.followUser = async function(userId) {
-  if (!this.following.includes(userId)) {
+  if (!this.isFollowing(userId)) {
     this.following.push(userId);
     await this.save();
   }
@@ -184,12 +292,8 @@ UserSchema.methods.unfollowUser = async function(userId) {
   await this.save();
 };
 
-UserSchema.methods.isFollowing = function(userId) {
-  return this.following.some(id => id.toString() === userId.toString());
-};
-
 UserSchema.methods.addFollower = async function(userId) {
-  if (!this.followers.includes(userId)) {
+  if (!this.isFollower(userId)) {
     this.followers.push(userId);
     await this.save();
   }
