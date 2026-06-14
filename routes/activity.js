@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Blog = require("../models/Blog");
 const Comment = require("../models/Comment");
+const User = require("../models/user");
 const { restrictToLoggedInUserOnly } = require("../middlewares/authentication");
 
 router.use(restrictToLoggedInUserOnly);
@@ -105,8 +106,7 @@ router.get("/settings", async (req, res) => {
       status: "published"
     });
 
-    // Get full user with preferences for pre-filling forms
-    const fullUser = await require("../models/user").findById(userId).lean();
+    const fullUser = await User.findById(userId).lean();
 
     res.render("settings", {
       user: fullUser,
