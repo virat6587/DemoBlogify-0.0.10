@@ -1,0 +1,37 @@
+<%- include('./partials/nav') %>
+<div class="container py-5">
+  <h3 class="mb-4"><i class="bi bi-chat-dots-fill text-primary me-2"></i>Commented Blogs</h3>
+  <% if (!blogs || blogs.length === 0) { %>
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-chat display-4"></i>
+      <p class="mt-3">You haven't commented on any blogs yet.</p>
+      <a href="/" class="btn btn-primary">Explore Blogs</a>
+    </div>
+  <% } else { %>
+    <div class="row g-4">
+      <% blogs.forEach(blog => { %>
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm">
+            <% if (blog.coverImageURL) { %>
+              <img src="<%= blog.coverImageURL %>" class="card-img-top" style="height:180px;object-fit:cover;">
+            <% } %>
+            <div class="card-body">
+              <h5 class="card-title"><%= truncate(blog.title, 50) %></h5>
+              <p class="card-text text-muted"><%= truncate(blog.excerpt || blog.body, 80) %></p>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <img src="<%= blog.createdBy?.profileImageURL || '/imgs/default.png' %>" width="24" height="24" class="rounded-circle">
+                <small class="text-muted"><%= blog.createdBy?.fullName %></small>
+              </div>
+              <span class="badge bg-info text-dark">
+                <i class="bi bi-chat-left-text me-1"></i><%= blog.userCommentCount %> comment<%= blog.userCommentCount !== 1 ? 's' : '' %>
+              </span>
+            </div>
+            <div class="card-footer bg-transparent">
+              <a href="/blogs/<%= blog._id %>" class="btn btn-sm btn-outline-primary">Read & Comment</a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
