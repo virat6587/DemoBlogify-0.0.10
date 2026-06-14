@@ -1,0 +1,67 @@
+<% locals.activeNav = 'notifications'; %>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0"><i class="bi bi-bell me-2 text-primary"></i>Notifications</h2>
+                    <button class="btn btn-sm btn-outline-primary" onclick="markAllRead()">
+                        <i class="bi bi-check-all me-1"></i>Mark all read
+                    </button>
+                </div>
+
+                <% if (!notifications || notifications.length === 0) { %>
+                <div class="empty-state">
+                    <i class="bi bi-bell-slash"></i>
+                    <h4>No notifications</h4>
+                    <p class="text-secondary">You're all caught up!</p>
+                </div>
+                <% } else { %>
+                <div class="list-group list-group-flush">
+                    <% notifications.forEach(notif => { %>
+                    <div class="list-group-item d-flex gap-3 p-3 <%= notif.isRead ? 'bg-light' : '' %>" id="notif-<%= notif._id %>">
+                        <div class="flex-shrink-0">
+                            <div class="bg-<%= notif.type === 'like' ? 'danger' : notif.type === 'follow' ? 'success' : notif.type === 'comment' ? 'primary' : 'secondary' %> bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="bi bi-<%= notif.type === 'like' ? 'heart' : notif.type === 'follow' ? 'person-plus' : notif.type === 'comment' ? 'chat-left' : 'bell' %> text-<%= notif.type === 'like' ? 'danger' : notif.type === 'follow' ? 'success' : notif.type === 'comment' ? 'primary' : 'secondary' %>"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="mb-1"><%= notif.message %></p>
+                            <small class="text-muted"><%= formatDate(notif.createdAt) %></small>
+                        </div>
+                        <% if (!notif.isRead) { %>
+                        <button class="btn btn-sm btn-link text-primary text-decoration-none" onclick="markRead('<%= notif._id %>')">Mark read</button>
+                        <% } %>
+                    </div>
+                    <% }) %>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+async function markRead(id) {
+    try {
+        const res = await fetch(`/notifications/${id}/read`, { method: 'PUT', headers: { 'Content-Type': 'application/json' } });
+        if (res.ok) {
+            document.getElementById(`notif-${id}`).classList.add('bg-light');
+            const btn = document.querySelector(`#notif-${id} button`);
+            if (btn) btn.remove();
+        }
+    } catch { showToast('Error marking as read', 'danger'); }
+}
+
+async function markAllRead() {
+    try {
+        const res = await fetch('/notifications/all/read', { method: 'PUT', headers: { 'Content-Type': 'application/json' } });
+        if (res.ok) {
+            document.querySelectorAll('.list-group-item').forEach(el => el.classList.add('bg-light'));
+            document.querySelectorAll('.list-group-item button').forEach(btn => btn.remove());
+            showToast('All marked as read', 'success');
+        }
+    } catch { showToast('Error', 'danger'); }
+}
+</script>

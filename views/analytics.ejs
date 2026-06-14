@@ -1,0 +1,80 @@
+<% locals.activeNav = 'analytics'; %>
+
+<section class="py-5">
+    <div class="container">
+        <h2 class="fw-bold mb-4"><i class="bi bi-graph-up me-2 text-primary"></i>Your Analytics</h2>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 56px; height: 56px;">
+                            <i class="bi bi-eye text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-0"><%= typeof totalViews !== 'undefined' ? totalViews : 0 %></h4>
+                            <p class="text-secondary mb-0">Total Views</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 56px; height: 56px;">
+                            <i class="bi bi-heart text-danger fs-4"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-0"><%= typeof totalLikes !== 'undefined' ? totalLikes : 0 %></h4>
+                            <p class="text-secondary mb-0">Total Likes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 56px; height: 56px;">
+                            <i class="bi bi-journal-text text-success fs-4"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-0"><%= typeof blogCount !== 'undefined' ? blogCount : 0 %></h4>
+                            <p class="text-secondary mb-0">Blogs Published</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="fw-bold mb-3">Top Performing Blogs</h4>
+        <% if (typeof topBlogs !== 'undefined' && topBlogs.length > 0) { %>
+        <div class="row g-4">
+            <% topBlogs.forEach((blog, index) => { %>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary">#<%= index + 1 %></span>
+                            <small class="text-muted"><%= formatDate(blog.createdAt) %></small>
+                        </div>
+                        <h5 class="fw-bold mb-2"><a href="/blogs/<%= blog._id %>" class="text-dark text-decoration-none"><%= truncate(blog.title, 50) %></a></h5>
+                        <div class="d-flex gap-3 text-muted">
+                            <span><i class="bi bi-eye"></i> <%= blog.viewCount || 0 %></span>
+                            <span><i class="bi bi-heart"></i> <%= blog.likes ? blog.likes.length : 0 %></span>
+                            <span><i class="bi bi-chat-left"></i> <%= blog.comments ? blog.comments.length : 0 %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+        <% } else { %>
+        <div class="empty-state">
+            <i class="bi bi-graph-down"></i>
+            <h4>No data yet</h4>
+            <p class="text-secondary">Start writing blogs to see your analytics!</p>
+            <a href="/blogs/add-new" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Write a Blog</a>
+        </div>
+        <% } %>
+    </div>
+</section>

@@ -1,0 +1,310 @@
+<% locals.activeNav = 'blogs'; %>
+
+<div class="reading-progress" id="readingProgress" style="width: 0%"></div>
+
+<section class="py-5" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/blogs" class="text-decoration-none">Blogs</a></li>
+                        <li class="breadcrumb-item active" aria-current="page"><%= truncate(blog.title, 40) %></li>
+                    </ol>
+                </nav>
+
+                <% if (blog.tags && blog.tags.length > 0) { %>
+                <div class="mb-3">
+                    <% blog.tags.forEach(tag => { %>
+                    <a href="/blogs/tags/<%= encodeURIComponent(tag) %>" class="tag me-2"><%= tag %></a>
+                    <% }) %>
+                </div>
+                <% } %>
+
+                <h1 class="display-5 fw-bold mb-3" style="letter-spacing: -0.5px; line-height: 1.2;"><%= blog.title %></h1>
+
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                    <% if (blog.createdBy) { %>
+                    <a href="/user/profile/<%= blog.createdBy._id %>" class="d-flex align-items-center gap-2 text-decoration-none">
+                        <img src="<%= blog.createdBy.profileImageURL || '/imgs/default.png' %>" alt="<%= blog.createdBy.fullName %>" class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover;" onerror="this.src='/imgs/default.png';">
+                        <div>
+                            <span class="fw-semibold text-dark d-block"><%= blog.createdBy.fullName %></span>
+                            <small class="text-muted"><%= formatDate(blog.createdAt) %> &bull; <%= blog.readingTime || 5 %> min read</small>
+                        </div>
+                    </a>
+                    <% } %>
+
+                    <div class="ms-auto d-flex gap-2">
+                        <button class="like-btn <%= blog.likes && user && blog.likes.includes(user._id.toString()) ? 'liked' : '' %>" id="likeBtn" data-blog-id="<%= blog._id %>">
+                            <i class="bi <%= blog.likes && user && blog.likes.includes(user._id.toString()) ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                            <span id="likeCount"><%= blog.likes ? blog.likes.length : 0 %></span>
+                        </button>
+                        <button class="btn btn-sm btn-light rounded-pill" onclick="shareBlog()"><i class="bi bi-share"></i> Share</button>
+                        <button class="btn btn-sm btn-light rounded-pill" id="bookmarkBtn"><i class="bi bi-bookmark"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<% if (blog.coverImageURL) { %>
+<section class="mb-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <img src="<%= blog.coverImageURL %>" alt="<%= blog.title %>" class="img-fluid rounded-4 shadow-lg w-100" style="max-height: 500px; object-fit: cover;" onerror="this.style.display='none';">
+            </div>
+        </div>
+    </div>
+</section>
+<% } %>
+
+<section class="py-4">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <article class="blog-content"><%- renderMarkdown(blog.body) %></article>
+
+                <% if (blog.createdBy) { %>
+                <div class="card mt-5 border-0 shadow-sm" style="background: #f8fafc;">
+                    <div class="card-body p-4">
+                        <div class="d-flex gap-3">
+                            <img src="<%= blog.createdBy.profileImageURL || '/imgs/default.png' %>" alt="<%= blog.createdBy.fullName %>" class="rounded-circle" style="width: 64px; height: 64px; object-fit: cover;" onerror="this.src='/imgs/default.png';">
+                            <div class="flex-grow-1">
+                                <h5 class="fw-bold mb-1">Written by <%= blog.createdBy.fullName %></h5>
+                                <p class="text-secondary mb-2" style="font-size: 0.9rem;"><%= blog.createdBy.bio || 'Writer at Blogify sharing stories and insights.' %></p>
+                                <a href="/user/profile/<%= blog.createdBy._id %>" class="btn btn-sm btn-primary">View Profile <i class="bi bi-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+
+                <div class="d-flex justify-content-between align-items-center mt-4 py-4 border-top border-bottom">
+                    <div class="d-flex gap-2">
+                        <button class="like-btn <%= blog.likes && user && blog.likes.includes(user._id.toString()) ? 'liked' : '' %>" id="likeBtnBottom" data-blog-id="<%= blog._id %>">
+                            <i class="bi <%= blog.likes && user && blog.likes.includes(user._id.toString()) ? 'bi-heart-fill' : 'bi-heart' %>"></i>
+                            <span id="likeCountBottom"><%= blog.likes ? blog.likes.length : 0 %></span>
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="copyLink()"><i class="bi bi-link-45deg"></i> Copy Link</button>
+                        <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="tweetBlog()"><i class="bi bi-twitter-x"></i> Tweet</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<% if (typeof relatedBlogs !== 'undefined' && relatedBlogs && relatedBlogs.length > 0) { %>
+<section class="py-5 bg-light">
+    <div class="container">
+        <h3 class="fw-bold mb-4"><i class="bi bi-journal-text me-2 text-primary"></i>Related Stories</h3>
+        <div class="row g-4">
+            <% relatedBlogs.forEach(related => { %>
+            <div class="col-md-4">
+                <article class="card h-100">
+                    <% if (related.coverImageURL) { %>
+                    <img src="<%= related.coverImageURL %>" class="card-img-top" alt="<%= related.title %>" loading="lazy" style="height: 160px; object-fit: cover;">
+                    <% } %>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-2"><a href="/blogs/<%= related._id %>" class="text-dark text-decoration-none stretched-link"><%= truncate(related.title, 50) %></a></h6>
+                        <small class="text-muted"><%= formatDate(related.createdAt) %></small>
+                    </div>
+                </article>
+            </div>
+            <% }) %>
+        </div>
+    </div>
+</section>
+<% } %>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h3 class="fw-bold mb-4"><i class="bi bi-chat-left-text me-2 text-primary"></i>Comments <span class="badge bg-primary bg-opacity-10 text-primary" id="commentCount"><%= typeof comments !== 'undefined' && comments ? comments.length : 0 %></span></h3>
+
+                <% if (locals.user) { %>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <form id="commentForm" data-blog-id="<%= blog._id %>">
+                            <div class="mb-3">
+                                <textarea class="form-control" id="commentBody" rows="3" placeholder="Share your thoughts on this article..." style="border-radius: 12px; resize: vertical;"></textarea>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Markdown supported</small>
+                                <button type="submit" class="btn btn-primary" id="submitComment"><i class="bi bi-send me-2"></i>Post Comment</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <% } else { %>
+                <div class="alert alert-info d-flex align-items-center" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <div>Please <a href="/user/signin" class="alert-link">sign in</a> to leave a comment.</div>
+                </div>
+                <% } %>
+
+                <div id="commentsList">
+                    <% if (typeof comments !== 'undefined' && comments && comments.length > 0) { %>
+                    <% comments.forEach(comment => { %>
+                    <div class="comment-box" id="comment-<%= comment._id %>">
+                        <div class="d-flex gap-3">
+                            <img src="<%= comment.createdBy && comment.createdBy.profileImageURL ? comment.createdBy.profileImageURL : '/imgs/default.png' %>" alt="<%= comment.createdBy ? comment.createdBy.fullName : 'Anonymous' %>" class="comment-avatar flex-shrink-0" onerror="this.src='/imgs/default.png';">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div><span class="fw-semibold"><%= comment.createdBy ? comment.createdBy.fullName : 'Anonymous' %></span><small class="text-muted ms-2"><%= formatDate(comment.createdAt) %></small></div>
+                                    <% if (locals.user && comment.createdBy && comment.createdBy._id.toString() === user._id.toString()) { %>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-link text-muted" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><button class="dropdown-item" onclick="editComment('<%= comment._id %>')"><i class="bi bi-pencil me-2"></i>Edit</button></li>
+                                            <li><button class="dropdown-item text-danger" onclick="deleteComment('<%= comment._id %>')"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                        </ul>
+                                    </div>
+                                    <% } %>
+                                </div>
+                                <p class="mb-2 mt-1" id="comment-text-<%= comment._id %>"><%= comment.body %></p>
+                                <div class="d-flex gap-3">
+                                    <button class="btn btn-sm btn-link text-muted p-0 text-decoration-none" onclick="likeComment('<%= comment._id %>')"><i class="bi bi-hand-thumbs-up"></i> <%= comment.likes ? comment.likes.length : 0 %></button>
+                                    <button class="btn btn-sm btn-link text-muted p-0 text-decoration-none" onclick="replyComment('<%= comment._id %>')"><i class="bi bi-reply"></i> Reply</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <% }) %>
+                    <% } else { %>
+                    <div class="text-center py-5 text-muted" id="noComments"><i class="bi bi-chat-square-dots" style="font-size: 3rem;"></i><p class="mt-2">No comments yet. Be the first to share your thoughts!</p></div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+window.addEventListener('scroll', () => {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    document.getElementById('readingProgress').style.width = (winScroll / height * 100) + '%';
+});
+
+function setupLikeBtn(btnId, countId) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', async function() {
+        const blogId = this.dataset.blogId;
+        const icon = this.querySelector('i');
+        const countSpan = document.getElementById(countId);
+        try {
+            const res = await fetch(`/blogs/${blogId}/like`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+            if (res.ok) {
+                const data = await res.json();
+                this.classList.toggle('liked');
+                icon.classList.toggle('bi-heart'); icon.classList.toggle('bi-heart-fill');
+                countSpan.textContent = data.likes || 0;
+                const otherId = btnId === 'likeBtn' ? 'likeBtnBottom' : 'likeBtn';
+                const otherCount = countId === 'likeCount' ? 'likeCountBottom' : 'likeCount';
+                const otherBtn = document.getElementById(otherId);
+                if (otherBtn) {
+                    otherBtn.classList.toggle('liked', this.classList.contains('liked'));
+                    const oi = otherBtn.querySelector('i');
+                    oi.classList.toggle('bi-heart', !this.classList.contains('liked'));
+                    oi.classList.toggle('bi-heart-fill', this.classList.contains('liked'));
+                }
+                const otherC = document.getElementById(otherCount);
+                if (otherC) otherC.textContent = data.likes || 0;
+            } else if (res.status === 401) { showToast('Please sign in to like', 'warning'); }
+        } catch { showToast('Failed to like. Try again.', 'danger'); }
+    });
+}
+setupLikeBtn('likeBtn', 'likeCount');
+setupLikeBtn('likeBtnBottom', 'likeCountBottom');
+
+function shareBlog() { if (navigator.share) { navigator.share({ title: '<%= blog.title %>', url: window.location.href }); } else { copyLink(); } }
+function copyLink() { navigator.clipboard.writeText(window.location.href).then(() => showToast('Link copied!', 'success')); }
+function tweetBlog() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('Check out: <%= blog.title %>')}&url=${encodeURIComponent(window.location.href)}`, '_blank'); }
+
+const commentForm = document.getElementById('commentForm');
+if (commentForm) {
+    commentForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const blogId = this.dataset.blogId;
+        const body = document.getElementById('commentBody').value.trim();
+        const btn = document.getElementById('submitComment');
+        if (!body) { showToast('Write a comment first', 'warning'); return; }
+        btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Posting...';
+        try {
+            const res = await fetch(`/comments/blog/${blogId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body }) });
+            if (res.ok) { document.getElementById('commentBody').value = ''; showToast('Comment posted!', 'success'); location.reload(); }
+            else { const err = await res.json(); showToast(err.message || 'Failed', 'danger'); }
+        } catch { showToast('Network error', 'danger'); }
+        finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send me-2"></i>Post Comment'; }
+    });
+}
+
+async function deleteComment(id) {
+    if (!confirm('Delete this comment?')) return;
+    try {
+        const res = await fetch(`/comments/${id}`, { method: 'DELETE' });
+        if (res.ok) { document.getElementById(`comment-${id}`).remove(); showToast('Deleted', 'success'); }
+        else showToast('Failed to delete', 'danger');
+    } catch { showToast('Error', 'danger'); }
+}
+
+function editComment(id) {
+    const el = document.getElementById(`comment-text-${id}`);
+    if (!el) return;
+    const text = el.textContent;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `<textarea class="form-control mb-2" rows="3">${text}</textarea><button class="btn btn-sm btn-primary me-2" onclick="saveComment('${id}', this)"><i class="bi bi-check"></i> Save</button><button class="btn btn-sm btn-outline-secondary" onclick="cancelEdit('${id}', '${text.replace(/'/g, "\\'")}')"><i class="bi bi-x"></i> Cancel</button>`;
+    el.replaceWith(wrapper);
+}
+
+async function saveComment(id, btn) {
+    const textarea = btn.parentElement.querySelector('textarea');
+    const body = textarea.value.trim();
+    if (!body) return;
+    try {
+        const res = await fetch(`/comments/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body }) });
+        if (res.ok) {
+            const p = document.createElement('p'); p.className = 'mb-2 mt-1'; p.id = `comment-text-${id}`; p.textContent = body;
+            btn.parentElement.replaceWith(p); showToast('Updated', 'success');
+        }
+    } catch { showToast('Error', 'danger'); }
+}
+
+function cancelEdit(id, text) {
+    const p = document.createElement('p'); p.className = 'mb-2 mt-1'; p.id = `comment-text-${id}`; p.textContent = text;
+    const wrapper = document.querySelector(`#comment-${id} textarea`).parentElement;
+    wrapper.replaceWith(p);
+}
+
+function replyComment(id) {
+    const ta = document.getElementById('commentBody');
+    if (ta) { ta.focus(); ta.value = `@comment-${id} `; }
+}
+
+async function likeComment(id) {
+    try {
+        const res = await fetch(`/comments/${id}/like`, { method: 'POST' });
+        if (res.ok) showToast('Liked!', 'success');
+    } catch { showToast('Error', 'danger'); }
+}
+
+function showToast(msg, type) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const icons = { success: 'bi-check-circle-fill', danger: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0 show mb-2`;
+    toast.style.minWidth = '280px';
+    toast.innerHTML = `<div class="d-flex align-items-center p-3"><i class="bi ${icons[type]} me-2 fs-5"></i><div class="toast-body fw-medium">${msg}</div><button type="button" class="btn-close btn-close-white ms-auto" onclick="this.parentElement.parentElement.remove()"></button></div>`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; toast.style.transition = 'all 0.3s'; setTimeout(() => toast.remove(), 300); }, 4000);
+}
+</script>

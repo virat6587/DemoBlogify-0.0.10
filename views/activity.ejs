@@ -1,0 +1,35 @@
+<% locals.activeNav = 'activity'; %>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <h2 class="fw-bold mb-4"><i class="bi bi-activity me-2 text-primary"></i>Recent Activity</h2>
+
+                <% if (!activities || activities.length === 0) { %>
+                <div class="empty-state">
+                    <i class="bi bi-clock-history"></i>
+                    <h4>No activity yet</h4>
+                    <p class="text-secondary">Your recent actions will appear here.</p>
+                </div>
+                <% } else { %>
+                <div class="timeline">
+                    <% activities.forEach(activity => { %>
+                    <div class="d-flex gap-3 mb-4 pb-4 border-bottom">
+                        <div class="flex-shrink-0">
+                            <div class="bg-<%= activity.type === 'blog' ? 'primary' : activity.type === 'like' ? 'danger' : activity.type === 'comment' ? 'info' : 'secondary' %> bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="bi bi-<%= activity.type === 'blog' ? 'journal-text' : activity.type === 'like' ? 'heart' : activity.type === 'comment' ? 'chat-left' : 'gear' %> text-<%= activity.type === 'blog' ? 'primary' : activity.type === 'like' ? 'danger' : activity.type === 'comment' ? 'info' : 'secondary' %>"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="mb-1"><%= activity.message %></p>
+                            <small class="text-muted"><%= formatDate(activity.createdAt) %></small>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,45 @@
+<% locals.activeNav = 'blogs'; %>
+
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-3"><i class="bi bi-tag me-1"></i>Tag</span>
+            <h1 class="fw-bold display-5">#<%= typeof tag !== 'undefined' ? tag : '' %></h1>
+            <p class="text-secondary"><%= typeof blogCount !== 'undefined' ? blogCount : 0 %> blogs tagged with this topic</p>
+        </div>
+
+        <% if (!blogs || blogs.length === 0) { %>
+        <div class="empty-state">
+            <i class="bi bi-tag"></i>
+            <h4>No blogs found</h4>
+            <p class="text-secondary">No blogs have been tagged with this topic yet.</p>
+            <a href="/" class="btn btn-primary"><i class="bi bi-house me-2"></i>Back to Home</a>
+        </div>
+        <% } else { %>
+        <div class="row g-4">
+            <% blogs.forEach(blog => { %>
+            <div class="col-md-6 col-lg-4">
+                <article class="card h-100">
+                    <% if (blog.coverImageURL) { %>
+                    <img src="<%= blog.coverImageURL %>" class="card-img-top" alt="<%= blog.title %>" loading="lazy" style="height: 200px; object-fit: cover;" onerror="this.src='/imgs/default-blog.png';">
+                    <% } else { %>
+                    <div class="bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="height: 200px;"><i class="bi bi-image text-primary" style="font-size: 3rem;"></i></div>
+                    <% } %>
+                    <div class="card-body">
+                        <h5 class="card-title"><a href="/blogs/<%= blog._id %>" class="text-dark text-decoration-none stretched-link"><%= truncate(blog.title, 60) %></a></h5>
+                        <p class="card-text text-secondary"><%= truncate(blog.excerpt || blog.body, 100) %></p>
+                        <div class="d-flex align-items-center justify-content-between mt-3">
+                            <small class="text-muted"><%= formatDate(blog.createdAt) %></small>
+                            <div class="d-flex gap-2 text-muted">
+                                <small><i class="bi bi-eye"></i> <%= blog.viewCount || 0 %></small>
+                                <small><i class="bi bi-heart"></i> <%= blog.likes ? blog.likes.length : 0 %></small>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            <% }) %>
+        </div>
+        <% } %>
+    </div>
+</section>

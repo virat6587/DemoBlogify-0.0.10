@@ -1,0 +1,69 @@
+<% locals.activeNav = 'profile'; %>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="d-flex align-items-center mb-4">
+                    <a href="/user/profile" class="btn btn-light btn-sm me-3"><i class="bi bi-arrow-left"></i> Back</a>
+                    <h2 class="fw-bold mb-0"><i class="bi bi-gear me-2 text-primary"></i>Edit Profile</h2>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <form action="/user/profile/edit" method="POST" enctype="multipart/form-data">
+                            <div class="text-center mb-4">
+                                <img src="<%= user.profileImageURL || '/imgs/default.png' %>" alt="<%= user.fullName %>" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;" onerror="this.src='/imgs/default.png';">
+                                <div>
+                                    <label class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-camera me-1"></i>Change Photo
+                                        <input type="file" name="profileImage" class="d-none" accept="image/*">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Full Name</label>
+                                <input type="text" name="fullName" class="form-control" value="<%= user.fullName %>" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Bio</label>
+                                <textarea name="bio" class="form-control" rows="3" placeholder="Tell us about yourself..." maxlength="500"><%= user.bio || '' %></textarea>
+                                <small class="text-muted">Max 500 characters</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Website</label>
+                                <input type="url" name="website" class="form-control" value="<%= user.website || '' %>" placeholder="https://yourwebsite.com">
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-medium">Theme Preference</label>
+                                <select name="theme" class="form-select">
+                                    <option value="light" <%= user.theme === 'light' ? 'selected' : '' %>>Light</option>
+                                    <option value="dark" <%= user.theme === 'dark' ? 'selected' : '' %>>Dark</option>
+                                </select>
+                            </div>
+
+                            <div class="d-flex gap-3">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Save Changes</button>
+                                <a href="/user/profile" class="btn btn-outline-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+document.querySelector('input[name="profileImage"]').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) { document.querySelector('.rounded-circle').src = e.target.result; };
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+</script>

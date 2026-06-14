@@ -1,0 +1,184 @@
+<% locals.activeNav = 'home'; %>
+
+<section class="hero-section py-5 py-lg-6 mb-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7 mb-4 mb-lg-0">
+                <div class="animate-fade-in-up">
+                    <span class="badge bg-primary bg-opacity-10 text-primary mb-3 px-3 py-2 rounded-pill"><i class="bi bi-stars me-1"></i> Welcome to Blogify</span>
+                    <h1 class="display-4 fw-bold mb-3" style="letter-spacing: -1px;">Discover Amazing<br><span class="text-primary">Stories</span> & Ideas</h1>
+                    <p class="lead text-secondary mb-4" style="max-width: 500px;">Read insightful articles from talented writers around the world. Share your own stories and grow your audience.</p>
+                    <% if (!locals.user) { %>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="/user/signup" class="btn btn-primary btn-lg"><i class="bi bi-pencil-square"></i> Start Writing</a>
+                        <a href="#blogs" class="btn btn-outline-primary btn-lg"><i class="bi bi-grid"></i> Explore Blogs</a>
+                    </div>
+                    <% } else { %>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="/blogs/add-new" class="btn btn-primary btn-lg"><i class="bi bi-plus-lg"></i> Write New Blog</a>
+                        <a href="/user/profile" class="btn btn-outline-primary btn-lg"><i class="bi bi-person"></i> My Profile</a>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block">
+                <div class="position-relative">
+                    <div class="bg-primary bg-opacity-10 rounded-4 p-4" style="transform: rotate(-2deg);">
+                        <div class="bg-white rounded-4 shadow-lg p-4" style="transform: rotate(2deg);">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;"><i class="bi bi-journal-text text-white fs-4"></i></div>
+                                <div><h6 class="mb-0 fw-bold">Featured Article</h6><small class="text-muted">By Top Author</small></div>
+                            </div>
+                            <div class="bg-secondary bg-opacity-10 rounded-3 mb-2" style="height: 120px;"></div>
+                            <div class="bg-secondary bg-opacity-10 rounded-2 mb-1" style="height: 12px; width: 80%;"></div>
+                            <div class="bg-secondary bg-opacity-10 rounded-2" style="height: 12px; width: 60%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>.hero-section{background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 50%,#f0f9ff 100%);position:relative;overflow:hidden}.hero-section::before{content:'';position:absolute;top:-50%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(13,110,253,0.08) 0%,transparent 70%);border-radius:50%}.py-lg-6{padding-top:5rem!important;padding-bottom:5rem!important}</style>
+
+<% if (typeof featuredBlogs !== 'undefined' && featuredBlogs && featuredBlogs.length > 0) { %>
+<section class="featured-section">
+    <div class="container position-relative">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div><h2 class="text-white mb-1"><i class="bi bi-lightning-charge-fill me-2"></i>Featured Stories</h2><p class="text-white-50 mb-0">Hand-picked articles by our editors</p></div>
+            <a href="/blogs?sort=trending" class="btn btn-light btn-sm">View All <i class="bi bi-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row g-4">
+            <% featuredBlogs.forEach((blog, index) => { %>
+            <div class="col-md-6 col-lg-4">
+                <article class="featured-card h-100" style="animation-delay:<%= index * 0.1 %>s">
+                    <div class="position-relative overflow-hidden">
+                        <% if (blog.coverImageURL) { %>
+                        <img src="<%= blog.coverImageURL %>" alt="<%= blog.title %>" class="w-100" style="height:200px;object-fit:cover;" loading="lazy">
+                        <% } else { %>
+                        <div class="bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="height:200px;"><i class="bi bi-image text-primary" style="font-size:3rem;"></i></div>
+                        <% } %>
+                        <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-3"><i class="bi bi-star-fill me-1"></i>Featured</span>
+                    </div>
+                    <div class="p-4">
+                        <% if (blog.tags && blog.tags.length > 0) { %>
+                        <div class="mb-2">
+                            <% blog.tags.slice(0,2).forEach(tag => { %>
+                            <a href="/blogs/tags/<%= encodeURIComponent(tag) %>" class="tag me-1"><%= tag %></a>
+                            <% }) %>
+                        </div>
+                        <% } %>
+                        <h5 class="fw-bold mb-2" style="line-height:1.4;"><a href="/blogs/<%= blog._id %>" class="text-dark text-decoration-none stretched-link"><%= truncate(blog.title, 60) %></a></h5>
+                        <p class="text-secondary mb-3" style="font-size:0.9rem;"><%= truncate(blog.excerpt || (blog.body ? blog.body.substring(0,100) : ''), 100) %>...</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <% if (blog.createdBy) { %>
+                                <img src="<%= blog.createdBy.profileImageURL || '/imgs/default.png' %>" alt="<%= blog.createdBy.fullName %>" class="rounded-circle" style="width:32px;height:32px;object-fit:cover;" onerror="this.src='/imgs/default.png';">
+                                <div><small class="fw-medium d-block"><%= blog.createdBy.fullName %></small><small class="text-muted"><%= blog.readingTime || 5 %> min read</small></div>
+                                <% } else { %><span class="text-muted">Unknown Author</span><% } %>
+                            </div>
+                            <div class="d-flex gap-2 text-muted"><small><i class="bi bi-eye"></i> <%= blog.viewCount || 0 %></small><small><i class="bi bi-heart"></i> <%= blog.likes ? blog.likes.length : 0 %></small></div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            <% }) %>
+        </div>
+    </div>
+</section>
+<% } %>
+
+<section class="py-5" id="blogs">
+    <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div><h2 class="fw-bold mb-1">Latest Articles</h2><p class="text-secondary mb-0">Explore the newest stories from our community</p></div>
+            <div class="d-flex gap-2">
+                <form method="GET" action="/" class="d-flex gap-2" id="sortForm">
+                    <input type="hidden" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>">
+                    <select name="sort" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                        <option value="newest" <%= typeof sort !== 'undefined' && sort === 'newest' ? 'selected' : '' %>>Newest First</option>
+                        <option value="oldest" <%= typeof sort !== 'undefined' && sort === 'oldest' ? 'selected' : '' %>>Oldest First</option>
+                        <option value="trending" <%= typeof sort !== 'undefined' && sort === 'trending' ? 'selected' : '' %>>Most Popular</option>
+                        <option value="title" <%= typeof sort !== 'undefined' && sort === 'title' ? 'selected' : '' %>>Title A-Z</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <% if (typeof search !== 'undefined' && search) { %>
+        <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-search me-2"></i>
+            <div>Showing results for <strong>"<%= search %>"</strong> <a href="/" class="alert-link ms-2">Clear search</a></div>
+        </div>
+        <% } %>
+
+        <% if (!blogs || blogs.length === 0) { %>
+        <div class="empty-state">
+            <i class="bi bi-journal-x"></i>
+            <h4 class="fw-bold mb-2">No blogs found</h4>
+            <p class="text-secondary mb-4">Be the first to share your story with the world!</p>
+            <% if (locals.user) { %><a href="/blogs/add-new" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Write First Blog</a>
+            <% } else { %><a href="/user/signup" class="btn btn-primary"><i class="bi bi-person-plus me-2"></i>Sign Up to Write</a><% } %>
+        </div>
+        <% } else { %>
+        <div class="row g-4">
+            <% blogs.forEach((blog, index) => { %>
+            <div class="col-md-6 col-lg-4">
+                <article class="card h-100 animate-fade-in-up" style="animation-delay:<%= index * 0.05 %>s">
+                    <div class="position-relative overflow-hidden">
+                        <% if (blog.coverImageURL) { %>
+                        <img src="<%= blog.coverImageURL %>" alt="<%= blog.title %>" class="card-img-top" loading="lazy" onerror="this.src='/imgs/default-blog.png';this.onerror=null;">
+                        <% } else { %>
+                        <div class="bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="height:200px;"><i class="bi bi-image text-primary" style="font-size:3rem;"></i></div>
+                        <% } %>
+                        <% if (blog.status === 'draft') { %><span class="badge bg-secondary position-absolute top-0 start-0 m-3">Draft</span><% } %>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <% if (blog.tags && blog.tags.length > 0) { %>
+                        <div class="mb-2">
+                            <% blog.tags.slice(0,3).forEach(tag => { %>
+                            <a href="/blogs/tags/<%= encodeURIComponent(tag) %>" class="tag me-1"><%= tag %></a>
+                            <% }) %>
+                        </div>
+                        <% } %>
+                        <h5 class="card-title"><a href="/blogs/<%= blog._id %>" class="text-dark text-decoration-none stretched-link"><%= truncate(blog.title, 60) %></a></h5>
+                        <p class="card-text flex-grow-1"><%= truncate(blog.excerpt || (blog.body ? blog.body.substring(0,120) : ''), 100) %></p>
+                        <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top">
+                            <div class="d-flex align-items-center gap-2">
+                                <% if (blog.createdBy) { %>
+                                <img src="<%= blog.createdBy.profileImageURL || '/imgs/default.png' %>" alt="<%= blog.createdBy.fullName %>" class="rounded-circle" style="width:28px;height:28px;object-fit:cover;" onerror="this.src='/imgs/default.png';">
+                                <small class="fw-medium"><%= blog.createdBy.fullName %></small>
+                                <% } else { %><small class="text-muted">Unknown</small><% } %>
+                            </div>
+                            <div class="d-flex gap-2 text-muted">
+                                <% if (blog.readingTime) { %><small><i class="bi bi-clock"></i> <%= blog.readingTime %>m</small><% } %>
+                                <small><i class="bi bi-eye"></i> <%= blog.viewCount || 0 %></small>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            <% }) %>
+        </div>
+
+        <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+        <nav class="mt-5" aria-label="Blog pagination">
+            <ul class="pagination justify-content-center">
+                <% if (typeof currentPage !== 'undefined' && currentPage > 1) { %>
+                <li class="page-item"><a class="page-link" href="/?page=<%= currentPage - 1 %>&sort=<%= typeof sort !== 'undefined' ? sort : 'newest' %>&search=<%= typeof search !== 'undefined' ? encodeURIComponent(search) : '' %>"><i class="bi bi-chevron-left"></i></a></li>
+                <% } %>
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                <li class="page-item <%= (typeof currentPage !== 'undefined' && currentPage === i) ? 'active' : '' %>"><a class="page-link" href="/?page=<%= i %>&sort=<%= typeof sort !== 'undefined' ? sort : 'newest' %>&search=<%= typeof search !== 'undefined' ? encodeURIComponent(search) : '' %>"><%= i %></a></li>
+                <% } %>
+                <% if (typeof currentPage !== 'undefined' && currentPage < totalPages) { %>
+                <li class="page-item"><a class="page-link" href="/?page=<%= currentPage + 1 %>&sort=<%= typeof sort !== 'undefined' ? sort : 'newest' %>&search=<%= typeof search !== 'undefined' ? encodeURIComponent(search) : '' %>"><i class="bi bi-chevron-right"></i></a></li>
+                <% } %>
+            </ul>
+        </nav>
+        <% } %>
+
+        <div class="text-center mt-4 text-muted"><small>Showing <%= blogs.length %> of <%= typeof totalBlogs !== 'undefined' ? totalBlogs : blogs.length %> blogs</small></div>
+        <% } %>
+    </div>
+</section>

@@ -1,0 +1,40 @@
+<% locals.activeNav = 'profile'; %>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="d-flex align-items-center mb-4">
+                    <a href="/user/profile/<%= typeof userId !== 'undefined' ? userId : '' %>" class="btn btn-light btn-sm me-3"><i class="bi bi-arrow-left"></i> Back</a>
+                    <h2 class="fw-bold mb-0"><i class="bi bi-person-check me-2 text-primary"></i>Following</h2>
+                </div>
+
+                <% if (!following || following.length === 0) { %>
+                <div class="empty-state">
+                    <i class="bi bi-person"></i>
+                    <h4>Not following anyone</h4>
+                    <p class="text-secondary">Start following writers you enjoy!</p>
+                    <a href="/" class="btn btn-primary"><i class="bi bi-grid me-2"></i>Discover Blogs</a>
+                </div>
+                <% } else { %>
+                <div class="list-group list-group-flush">
+                    <% following.forEach(person => { %>
+                    <div class="list-group-item d-flex align-items-center gap-3 p-3">
+                        <img src="<%= person.profileImageURL || '/imgs/default.png' %>" alt="<%= person.fullName %>" class="rounded-circle" style="width: 48px; height: 48px; object-fit: cover;" onerror="this.src='/imgs/default.png';">
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-0"><a href="/user/profile/<%= person._id %>" class="text-dark text-decoration-none"><%= person.fullName %></a></h6>
+                            <small class="text-muted"><%= person.bio ? truncate(person.bio, 60) : 'No bio' %></small>
+                        </div>
+                        <% if (locals.user && user._id.toString() !== person._id.toString()) { %>
+                        <button class="follow-btn btn btn-sm btn-primary" data-user-id="<%= person._id %>">
+                            <i class="bi bi-person-check-fill"></i> Following
+                        </button>
+                        <% } %>
+                    </div>
+                    <% }) %>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</section>
