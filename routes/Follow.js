@@ -133,7 +133,7 @@ router.post("/:userId/follow", async (req, res) => {
 // ====================== ACCEPT FOLLOW REQUEST ======================
 router.post("/:userId/accept", async (req, res) => {
   try {
-    const { userId } = req.params; // requester ID
+    const { userId } = req.params;
     const currentUserId = req.user._id.toString();
 
     const currentUser = await User.findById(currentUserId);
@@ -143,13 +143,12 @@ router.post("/:userId/accept", async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Verify request exists
     const hasRequest = currentUser.hasPendingRequestFrom(userId);
     if (!hasRequest) {
       return res.status(400).json({ success: false, message: "No pending request from this user" });
     }
 
-    // Accept: Move from pending to accepted
+    // Accept: Move from pending to followers
     await currentUser.acceptFollower(userId);
     await requester.followUser(currentUserId);
 
@@ -178,7 +177,7 @@ router.post("/:userId/accept", async (req, res) => {
 // ====================== REJECT FOLLOW REQUEST ======================
 router.post("/:userId/reject", async (req, res) => {
   try {
-    const { userId } = req.params; // requester ID
+    const { userId } = req.params;
     const currentUserId = req.user._id.toString();
 
     const currentUser = await User.findById(currentUserId);
@@ -192,7 +191,7 @@ router.post("/:userId/reject", async (req, res) => {
       { requestStatus: "rejected", isRead: true }
     );
 
-    // Also remove from requester's pendingFollowing
+    // Remove from requester's pendingFollowing
     await User.findByIdAndUpdate(userId, {
       $pull: { pendingFollowing: { user: currentUserId } }
     });
@@ -229,7 +228,6 @@ router.get("/:userId/followers", async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // Privacy check
     const isOwner = visitorId === userId;
     const isAccepted = user.isAcceptedFollower(visitorId);
     const isMutual = user.isMutualFollower(visitorId);
