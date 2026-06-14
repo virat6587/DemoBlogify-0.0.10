@@ -4,7 +4,6 @@ const Blog = require("../models/Blog");
 const Comment = require("../models/Comment");
 const { restrictToLoggedInUserOnly } = require("../middlewares/authentication");
 
-// Protect all activity routes
 router.use(restrictToLoggedInUserOnly);
 
 // ====================== GET - LIKED BLOGS ======================
@@ -12,7 +11,6 @@ router.get("/liked-blogs", async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Find all published, non-deleted blogs where the user's ID exists in the likes array
     const likedBlogs = await Blog.find({
       likes: { $in: [userId] },
       isDeleted: false,
@@ -39,12 +37,10 @@ router.get("/commented-blogs", async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Step 1: Find all non-deleted comments by this user
     const userComments = await Comment.find({
       author: userId,
       isDeleted: false
-    })
-      .distinct("blog"); // Get unique blog IDs only
+    }).distinct("blog");
 
     if (!userComments || userComments.length === 0) {
       return res.render("activityCommented", {
@@ -55,7 +51,6 @@ router.get("/commented-blogs", async (req, res) => {
       });
     }
 
-    // Step 2: Fetch the actual blog details for those unique IDs
     const commentedBlogs = await Blog.find({
       _id: { $in: userComments },
       isDeleted: false,
@@ -65,7 +60,6 @@ router.get("/commented-blogs", async (req, res) => {
       .populate("createdBy", "fullName profileImageURL")
       .lean();
 
-    // Step 3: Attach comment count per blog for richer UI
     const blogsWithCommentCount = await Promise.all(
       commentedBlogs.map(async (blog) => {
         const commentCount = await Comment.countDocuments({
@@ -89,12 +83,11 @@ router.get("/commented-blogs", async (req, res) => {
   }
 });
 
-// ====================== GET - SETTINGS PAGE (Unified Activity Hub) ======================
+// ====================== GET - SETTINGS PAGE ======================
 router.get("/settings", async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Fetch counts for the settings dashboard
     const likedCount = await Blog.countDocuments({
       likes: { $in: [userId] },
       isDeleted: false,
@@ -112,8 +105,11 @@ router.get("/settings", async (req, res) => {
       status: "published"
     });
 
+    // Get full user with preferences for pre-filling forms
+    const fullUser = await require("../models/user").findById(userId).lean();
+
     res.render("settings", {
-      user: req.user,
+      user: fullUser,
       likedCount,
       commentedCount,
       pageTitle: "Settings",
