@@ -1,45 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <%- include("./partials/head") %>
-    <title>Page Not Found | Blogify</title>
-</head>
-<body>
-    <%- include("./partials/nave") %>
-
-    <div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
-        <div class="text-center">
-            <div class="mb-4">
-                <div style="font-size: 6rem; font-weight: 700; color: #6366f1; line-height: 1;">
-                    404
-                </div>
-            </div>
-            
-            <h1 class="display-5 fw-bold mb-3">Page Not Found</h1>
-            
-            <p class="lead text-muted mb-4">
-                The page you're looking for doesn't exist or has been moved.
-            </p>
-
-            <div class="mt-5">
-                <a href="/" class="btn btn-primary btn-lg me-3">
-                    <i class="fas fa-home"></i> Back to Home
-                </a>
-                <a href="/blogs/add-new" class="btn btn-outline-primary btn-lg">
-                    <i class="fas fa-pen"></i> Write a Blog
-                </a>
-            </div>
-
-            <div class="mt-5 pt-5">
-                <p class="text-muted">
-                    <i class="fas fa-lightbulb"></i> 
-                    Perhaps you'd like to explore some 
-                    <a href="/?sort=trending" class="text-primary">trending blogs</a>?
-                </p>
-            </div>
+<section class="py-5 py-lg-6">
+    <div class="container text-center">
+        <div class="mb-4">
+            <i class="bi bi-emoji-frown text-muted" style="font-size: 6rem;"></i>
         </div>
+        <h1 class="display-1 fw-bold text-primary mb-2\">404</h1>
+        <h2 class="fw-bold mb-3">Page Not Found</h2>
+        <p class="text-secondary mb-4" style="max-width: 400px; margin: 0 auto;">The page you're looking for doesn't exist or has been moved.</p>
+        <a href="/" class="btn btn-primary btn-lg"><i class="bi bi-house me-2"></i>Go Home</a>
     </div>
-
-    <%- include("./partials/scripts") %>
-</body>
-</html>
+</section>
