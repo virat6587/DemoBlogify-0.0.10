@@ -112,8 +112,9 @@
                                     <i class="fas fa-chart-line"></i> My Analytics
                                 </a>
                             </li>
+                            <!-- ==================== UPDATED: Link to full Settings page ==================== -->
                             <li>
-                                <a class="dropdown-item" href="#" id="settingsBtn">
+                                <a class="dropdown-item" href="/settings">
                                     <i class="fas fa-cog"></i> Settings
                                 </a>
                             </li>
@@ -169,35 +170,6 @@
     </div>
 </div>
 
-<!-- Settings Modal -->
-<div class="modal fade" id="settingsModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-cog"></i> Settings</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Theme</label>
-                    <select class="form-select" id="themeSelect">
-                        <option value="light" selected>Light Mode</option>
-                        <option value="dark">Dark Mode</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
-                        <label class="form-check-label" for="emailNotifications">
-                            Email Notifications
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Global Error Alert -->
 <% if (locals.error) { %>
     <div class="container-fluid mt-5 pt-5">
@@ -209,32 +181,54 @@
 <% } %>
 
 <script>
-    // Dark Mode Toggle
+    // ==================== DARK MODE TOGGLE (DB + LocalStorage Sync) ====================
     const themeToggle = document.getElementById('themeToggle');
     const htmlElement = document.documentElement;
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    
+    // Priority: 1) DB theme from server, 2) localStorage fallback
+    const dbTheme = '<%= locals.user ? locals.user.theme : "" %>';
+    const savedTheme = dbTheme || localStorage.getItem('theme') || 'light';
 
-    // Apply saved theme on page load
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.innerHTML = '<i class="fas fa-sun fa-lg" style="color: #fbbf24;"></i>';
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-sun fa-lg" style="color: #fbbf24;"></i>';
+        } else {
+            document.body.classList.remove('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-moon fa-lg" style="color: #6366f1;"></i>';
+        }
     }
 
-    themeToggle.addEventListener('click', () => {
+    // Apply theme on page load
+    applyTheme(savedTheme);
+
+    themeToggle.addEventListener('click', async () => {
+        const isDarkMode = !document.body.classList.contains('dark-mode');
+        const newTheme = isDarkMode ? 'dark' : 'light';
+        
         document.body.classList.toggle('dark-mode');
-        const isDarkMode = document.body.classList.contains('dark-mode');
-        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-        themeToggle.innerHTML = isDarkMode ? 
-            '<i class="fas fa-sun fa-lg" style="color: #fbbf24;"></i>' : 
-            '<i class="fas fa-moon fa-lg" style="color: #6366f1;"></i>';
+        applyTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+
+        // Sync to DB if user is logged in
+        <% if (locals.user) { %>
+            try {
+                await fetch('/user/profile/update', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ theme: newTheme })
+                });
+            } catch (err) {
+                console.error('Failed to sync theme to DB:', err);
+            }
+        <% } %>
     });
 
-    // Notifications
+    // ==================== NOTIFICATIONS ====================
     <% if (locals.user) { %>
         const notificationBell = document.getElementById('notificationBell');
         const notificationOffcanvas = new bootstrap.Offcanvas(document.getElementById('notificationOffcanvas'));
 
-        // Load notifications
         async function loadNotifications() {
             try {
                 const res = await fetch('/notifications?page=1');
@@ -275,9 +269,7 @@
                                 ${new Date(notif.createdAt).toLocaleDateString()}
                             </small>
                         </div>
-                        <% if (locals.user) { %>
-                            ${!notif.isRead ? '<span class="badge bg-primary ms-2">New</span>' : ''}
-                        <% } %>
+                        ${!notif.isRead ? '<span class="badge bg-primary ms-2">New</span>' : ''}
                     </div>
                 </div>
             `).join('');
@@ -290,13 +282,5 @@
 
         // Load notifications on page load
         loadNotifications();
-
-        // Settings Button
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
-        settingsBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            settingsModal.show();
-        });
     <% } %>
 </script>
