@@ -200,5 +200,15 @@ router.delete("/delete-account", async (req, res) => {
         });
     }
 });
+router.put("/notifications", async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.notificationSettings = { ...user.notificationSettings, ...req.body };
+    await user.save();
+    res.json({ success: true, message: "Notification preferences updated" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 module.exports = router;
