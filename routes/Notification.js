@@ -15,7 +15,6 @@ router.get("/", async (req, res) => {
       .populate("blog", "title slug coverImageURL")
       .lean();
 
-    // Group by type for cleaner UI
     const grouped = {
       follow_requests: notifications.filter(n => n.type === "follow_request" && n.requestStatus === "pending"),
       all: notifications
