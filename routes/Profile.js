@@ -330,6 +330,29 @@ router.post("/export", async (req, res) => {
     });
   }
 });
+// ====================== UPDATE PRIVACY (isPrivate toggle) ======================
+router.put("/privacy/account", async (req, res) => {
+  try {
+    const { isPrivate } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (typeof isPrivate !== 'boolean') {
+      return res.status(400).json({ success: false, message: "isPrivate must be boolean" });
+    }
+
+    user.isPrivate = isPrivate;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Account is now ${isPrivate ? 'private' : 'public'}`,
+      isPrivate
+    });
+  } catch (error) {
+    console.error("Privacy Update Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 // ====================== VIEW ANY USER PROFILE (with Privacy) ======================
 router.get("/:userId", async (req, res) => {
   try {
