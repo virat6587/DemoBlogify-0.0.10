@@ -1,589 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <%- include("./partials/head") %>
-    <title>Sign Up - Blogify</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html {
-            height: 100%;
-        }
-
-        body {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #764ba2 100%);
-            min-height: 100dvh;
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow-x: hidden;
-            padding: 0.75rem;
-        }
-
-        .auth-container {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex: 1;
-            padding: 0.5rem 0;
-        }
-
-        .auth-card {
-            background: rgba(255, 255, 255, 0.97);
-            backdrop-filter: blur(12px);
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            width: 100%;
-            max-width: 420px;
-            animation: slideIn 0.4s ease-out;
-        }
-
-        .auth-card-body {
-            padding: 1.75rem 1.5rem;
-        }
-
-        .auth-header {
-            text-align: center;
-            margin-bottom: 1.25rem;
-        }
-
-        .auth-header h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.3rem;
-            letter-spacing: -0.5px;
-        }
-
-        .auth-header p {
-            color: #64748b;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .form-group {
-            margin-bottom: 0.85rem;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.35rem;
-            display: block;
-            font-size: 0.85rem;
-        }
-
-        .form-control {
-            width: 100%;
-            border-radius: 10px;
-            padding: 0.7rem 0.85rem;
-            border: 2px solid #e2e8f0;
-            font-size: 16px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .form-control:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
-            outline: none;
-        }
-
-        .form-control::placeholder {
-            color: #94a3b8;
-        }
-
-        .input-group {
-            display: flex;
-            align-items: stretch;
-        }
-
-        .input-group .form-control {
-            border-radius: 10px 0 0 10px;
-            margin: 0;
-        }
-
-        .input-group .btn {
-            border-radius: 0 10px 10px 0;
-            border: 2px solid #e2e8f0;
-            border-left: none;
-            background: white;
-            color: #64748b;
-            font-size: 1.1rem;
-            padding: 0.7rem 0.85rem;
-            min-width: 44px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .input-group .btn:hover {
-            background: #f8fafc;
-            color: #334155;
-        }
-
-        .otp-container {
-            margin-bottom: 0.85rem;
-        }
-
-        .otp-inputs {
-            display: flex;
-            gap: 0.4rem;
-            margin-bottom: 0.75rem;
-            justify-content: center;
-        }
-
-        .otp-box {
-            width: 40px;
-            height: 46px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            text-align: center;
-            border-radius: 8px;
-            border: 2px solid #e2e8f0;
-            background: white;
-            color: #1e293b;
-            transition: all 0.3s ease;
-            font-family: 'Inter', monospace;
-        }
-
-        .otp-box:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
-            outline: none;
-        }
-
-        .btn-send-otp {
-            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-            border: none;
-            border-radius: 10px;
-            padding: 0.65rem 1.5rem;
-            color: #475569;
-            font-weight: 700;
-            font-size: 0.85rem;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 0.5rem;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .btn-send-otp:hover:not(:disabled) {
-            background: linear-gradient(135deg, #cbd5e1, #94a3b8);
-            transform: translateY(-1px);
-        }
-
-        .btn-send-otp:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-signup {
-            background: linear-gradient(135deg, #6366f1, #4f46e5);
-            border: none;
-            border-radius: 10px;
-            padding: 0.8rem 1.5rem;
-            color: white;
-            font-weight: 700;
-            font-size: 0.95rem;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .btn-signup:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-signup:active {
-            transform: translateY(0);
-        }
-
-        .btn-signup:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 1rem 0;
-            color: #94a3b8;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #e2e8f0;
-        }
-
-        .divider span {
-            padding: 0 0.75rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .btn-google {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.6rem;
-            width: 100%;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 0.8rem 1.5rem;
-            background: white;
-            color: #1e293b;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
-            margin-bottom: 1rem;
-        }
-
-        .btn-google:hover {
-            border-color: #cbd5e1;
-            background: #f8fafc;
-            transform: translateY(-1px);
-        }
-
-        .signin-link {
-            text-align: center;
-            margin-top: 1rem;
-            color: #64748b;
-            font-size: 0.85rem;
-        }
-
-        .signin-link a {
-            color: #6366f1;
-            text-decoration: none;
-            font-weight: 700;
-            transition: color 0.3s ease;
-        }
-
-        .signin-link a:hover {
-            color: #4f46e5;
-        }
-
-        .alert {
-            border-radius: 10px;
-            padding: 0.85rem;
-            margin-bottom: 1rem;
-            border: none;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .alert-danger {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Animations */
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Loading State */
-        .spinner-border {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            vertical-align: text-bottom;
-            border: 2px solid currentColor;
-            border-right-color: transparent;
-            border-radius: 50%;
-            animation: spinner-border 0.75s linear infinite;
-        }
-
-        @keyframes spinner-border {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Responsive */
-        @media (max-width: 576px) {
-            body {
-                padding: 0.5rem;
-                justify-content: flex-start;
-                padding-top: 0.75rem;
-                padding-bottom: 0.75rem;
-            }
-
-            .auth-container {
-                align-items: flex-start;
-                padding: 0;
-            }
-
-            .auth-card {
-                max-width: 100%;
-                border-radius: 14px;
-            }
-
-            .auth-card-body {
-                padding: 1.5rem 1.25rem;
-            }
-
-            .auth-header h2 {
-                font-size: 1.35rem;
-            }
-
-            .auth-header p {
-                font-size: 0.8rem;
-            }
-
-            .otp-box {
-                width: 36px;
-                height: 42px;
-                font-size: 1.1rem;
-            }
-
-            .otp-inputs {
-                gap: 0.3rem;
-            }
-
-            .form-control {
-                padding: 0.65rem 0.8rem;
-                font-size: 16px;
-            }
-
-            .form-label {
-                font-size: 0.82rem;
-            }
-
-            .btn-google {
-                padding: 0.7rem 1.5rem;
-            }
-
-            .btn-signup {
-                padding: 0.75rem 1.5rem;
-            }
-        }
-
-        @media (max-width: 360px) {
-            .auth-card-body {
-                padding: 1.25rem 1rem;
-            }
-
-            .auth-header h2 {
-                font-size: 1.2rem;
-            }
-
-            .auth-header {
-                margin-bottom: 1rem;
-            }
-
-            .otp-box {
-                width: 32px;
-                height: 38px;
-                font-size: 1rem;
-            }
-
-            .otp-inputs {
-                gap: 0.25rem;
-            }
-        }
-    </style>
-<base target="_blank">
-</head>
-<body>
-    <%- include("./partials/nave") %>
-
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-card-body">
-                <div class="auth-header">
-                    <h2>Create Account</h2>
-                    <p>Join Blogify and start sharing</p>
-                </div>
-
-                <a href="/user/auth/google" class="btn-google">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
-                         width="20" height="20" alt="Google">
-                    Sign up with Google
-                </a>
-
-                <div class="divider">
-                    <span>OR</span>
-                </div>
-
-                <form id="signupForm">
-                    <div class="form-group">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" id="fullName" name="fullName" class="form-control" placeholder="John Doe" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        <div class="input-group">
-                            <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
-                            <button type="button" class="btn" id="togglePassword" title="Toggle password visibility">
-                                👁️
+<% locals.activeNav = 'signup'; %>
+
+<section class="py-5 py-lg-6">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-lg border-0" style="border-radius: 16px;">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                                <i class="bi bi-person-plus-fill text-success fs-2"></i>
+                            </div>
+                            <h2 class="fw-bold">Create Account</h2>
+                            <p class="text-secondary mb-0">Join our community of writers</p>
+                        </div>
+
+                        <% if (typeof error !== 'undefined' && error) { %>
+                        <div class="alert alert-danger d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div><%= error %></div>
+                        </div>
+                        <% } %>
+
+                        <form action="/user/signup" method="POST" data-validate>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Full Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
+                                    <input type="text" name="fullName" class="form-control border-start-0" placeholder="John Doe" required minlength="2">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                                    <input type="email" name="email" class="form-control border-start-0" placeholder="you@example.com" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                                    <input type="password" name="password" class="form-control border-start-0" placeholder="Min 6 characters" required minlength="6">
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-medium">Profile Image URL (optional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-image text-muted"></i></span>
+                                    <input type="url" name="profileImageURL" class="form-control border-start-0" placeholder="https://example.com/photo.jpg">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 mb-3">
+                                <i class="bi bi-person-plus me-2"></i>Create Account
                             </button>
+                        </form>
+
+                        <div class="d-flex align-items-center my-4">
+                            <hr class="flex-grow-1"><span class="mx-3 text-muted">or</span><hr class="flex-grow-1">
                         </div>
+
+                        <a href="/user/auth/google" class="btn btn-outline-secondary w-100 mb-3">
+                            <img src="https://www.google.com/favicon.ico" alt="Google" style="width: 18px; margin-right: 8px;">
+                            Sign up with Google
+                        </a>
+
+                        <p class="text-center text-muted mb-0">
+                            Already have an account? <a href="/user/signin" class="text-decoration-none fw-medium">Sign In</a>
+                        </p>
                     </div>
-
-                    <div class="otp-container">
-                        <label class="form-label">Verification Code (OTP)</label>
-                        <div class="otp-inputs" id="otpContainer">
-                            <input type="text" maxlength="1" class="otp-box" data-index="0">
-                            <input type="text" maxlength="1" class="otp-box" data-index="1">
-                            <input type="text" maxlength="1" class="otp-box" data-index="2">
-                            <input type="text" maxlength="1" class="otp-box" data-index="3">
-                            <input type="text" maxlength="1" class="otp-box" data-index="4">
-                            <input type="text" maxlength="1" class="otp-box" data-index="5">
-                        </div>
-                        <button type="button" class="btn-send-otp" id="sendOtpBtn">
-                            Send OTP
-                        </button>
-                        <input type="hidden" name="otp" id="hiddenOtp">
-                    </div>
-
-                    <button type="submit" class="btn-signup" id="submitBtn">
-                        Create Account
-                    </button>
-                </form>
-
-                <p class="signin-link">
-                    Already have an account? 
-                    <a href="/user/signin">Sign In</a>
-                </p>
+                </div>
             </div>
         </div>
     </div>
-
-    <%- include("./partials/scripts") %>
-
-    <script>
-        // Password Toggle
-        document.getElementById('togglePassword').addEventListener('click', function () {
-            const pw = document.getElementById('password');
-            if (pw.type === 'password') {
-                pw.type = 'text';
-                this.textContent = '🙈';
-            } else {
-                pw.type = 'password';
-                this.textContent = '👁️';
-            }
-        });
-
-        // OTP Handling
-        const otpInputs = document.querySelectorAll('.otp-box');
-        otpInputs.forEach((input, index) => {
-            input.addEventListener('input', () => {
-                if (input.value.length === 1 && index < 5) {
-                    otpInputs[index + 1].focus();
-                }
-                updateHiddenOtp();
-            });
-
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && input.value === '' && index > 0) {
-                    otpInputs[index - 1].focus();
-                }
-            });
-        });
-
-        function updateHiddenOtp() {
-            let otp = '';
-            otpInputs.forEach(box => otp += box.value);
-            document.getElementById('hiddenOtp').value = otp;
-        }
-
-        // Send OTP
-        document.getElementById('sendOtpBtn').addEventListener('click', async function() {
-            const email = document.getElementById('email').value.trim();
-            if (!email) return alert("Please enter your email first!");
-
-            this.disabled = true;
-            this.textContent = "Sending OTP...";
-
-            try {
-                const res = await fetch('/user/send-otp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-
-                const data = await res.json();
-
-                if (data.success) {
-                    alert(`✅ OTP sent to ${email}`);
-                    this.textContent = "Resend OTP";
-                    setTimeout(() => this.disabled = false, 30000);
-                } else {
-                    alert(data.message || "Failed to send OTP");
-                    this.disabled = false;
-                    this.textContent = "Send OTP";
-                }
-            } catch (err) {
-                alert("Failed to send OTP");
-                this.disabled = false;
-                this.textContent = "Send OTP";
-            }
-        });
-
-        // Signup Form Submit
-        document.getElementById('signupForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<span class="spinner-border me-2"></span>Creating...`;
-
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData.entries());
-
-            try {
-                const res = await fetch('/user/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await res.json();
-
-                if (result.success) {
-                    alert("🎉 Account created successfully!");
-                    window.location.href = "/";
-                } else {
-                    alert(result.message);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "Create Account";
-                }
-            } catch (err) {
-                alert("Something went wrong");
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Create Account";
-            }
-        });
-    </script>
-</body>
-</html>
+</section>
