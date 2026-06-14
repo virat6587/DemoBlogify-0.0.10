@@ -28,6 +28,7 @@ const CommentRoute = require("./routes/Comment");
 const FollowRoute = require("./routes/Follow");
 const NotificationRoute = require("./routes/Notification");
 const AnalyticsRoute = require("./routes/Analytics");
+const ActivityRoute = require("./routes/activity");
 
 const { checkForAuthenticationCookie } = require("./middlewares/authentication");
 const { queryHandler } = require("./middlewares/queryParams");
@@ -223,6 +224,8 @@ app.use("/comments", CommentRoute);
 app.use("/follow", FollowRoute);
 app.use("/notifications", NotificationRoute);
 app.use("/analytics", AnalyticsRoute);
+app.use("/activity", ActivityRoute);
+app.use("/settings", ActivityRoute); 
 
 // ====================== 404 HANDLER ======================
 app.use((req, res) => {
