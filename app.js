@@ -210,6 +210,7 @@ app.use("/follow", FollowRoute);
 app.use("/notifications", NotificationRoute);
 app.use("/analytics", AnalyticsRoute);
 app.use("/activity", ActivityRoute);
+app.use("/notifications", require("./routes/notification"));
 
 // ====================== 404 HANDLER ======================
 app.use((req, res) => {
