@@ -14,10 +14,10 @@ const NotificationSchema = new Schema({
       "comment",
       "reply",
       "like",
-      "follow",           // Instant follow on public account
-      "follow_request",   // Pending follow request on private account
-      "follow_accepted",  // Request accepted
-      "new_blog",         // New blog from followed user
+      "follow",
+      "follow_request",
+      "follow_accepted",
+      "new_blog",
       "mention"
     ],
     required: true
