@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Blog = require("../models/Blog");
+const User = require("../models/user");
+const Notification = require("../models/Notification");
 const { restrictToLoggedInUserOnly } = require("../middlewares/authentication");
 const { blogCreationLimiter } = require("../middlewares/rateLimiting");
 const cloudinaryUpload = require("../middlewares/CloudinaryUploads");
@@ -48,6 +50,25 @@ router.post("/add-new", blogCreationLimiter, cloudinaryUpload.single("coverImage
             author: req.user._id
         });
 
+        // ====================== NOTIFY FOLLOWERS OF NEW BLOG ======================
+        try {
+            const author = await User.findById(req.user._id).populate("followers", "_id");
+            if (author.followers?.length > 0) {
+                const notifications = author.followers.map(follower => ({
+                    recipient: follower._id,
+                    type: "new_blog",
+                    title: "New Blog Post",
+                    message: `${req.user.fullName} published: ${newBlog.title}`,
+                    actor: req.user._id,
+                    blog: newBlog._id,
+                    blogImageURL: newBlog.coverImageURL
+                }));
+                await Notification.insertMany(notifications);
+            }
+        } catch (notifError) {
+            console.error("Follower notification error:", notifError);
+        }
+
         res.redirect(`/blogs/${newBlog._id}`);
     } catch (error) {
         console.error("Blog Creation Error:", error);
@@ -83,7 +104,6 @@ router.get("/:id", async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id)
             .notDeleted()
-            // FIX: Added "bio" to populate so the sidebar author card renders correctly
             .populate("createdBy", "fullName profileImageURL bio followers")
             .lean();
 
@@ -98,10 +118,6 @@ router.get("/:id", async (req, res) => {
 
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-        // FIX 1: Use $elemMatch so BOTH conditions apply to the SAME array element.
-        // Without $elemMatch, MongoDB only checks that the array contains an element
-        // matching each condition independently — they could be different elements,
-        // causing the deduplication check to fail silently.
         const existingView = await Blog.findOne({
             _id: blog._id,
             viewers: {
@@ -113,10 +129,6 @@ router.get("/:id", async (req, res) => {
         });
 
         if (!existingView) {
-            // FIX 2: $addToSet doesn't deduplicate subdocuments that differ by even one
-            // field (e.g. viewedAt). It kept pushing new entries forever, growing the
-            // viewers array without bound. Instead: $pull the stale entry for this
-            // viewer (if any), then $push a fresh one — keeping one entry per viewer.
             await Blog.findByIdAndUpdate(blog._id, {
                 $pull: { viewers: { viewerId: viewerFingerprint } }
             });
@@ -129,15 +141,11 @@ router.get("/:id", async (req, res) => {
                         isAuthenticated: !!req.user
                     }
                 },
-                // FIX 3: viewCount is incremented ONLY here.
-                // AnalyticsService.trackView() has been fixed to NOT also increment it,
-                // which was causing every view to be counted twice.
                 $inc: { viewCount: 1 }
             });
 
             await AnalyticsService.trackView(blog._id, req.user?._id, "direct");
         }
-        // =====================================================================
 
         const updatedBlog = await Blog.findById(req.params.id)
             .notDeleted()
@@ -158,8 +166,6 @@ router.get("/:id", async (req, res) => {
             status: "published"
         }).limit(3).lean();
 
-        // FIX 4: .includes() uses reference equality and always returns false for
-        // ObjectId objects. Use .some() with string comparison instead.
         const hasLiked = req.user
             ? updatedBlog.likes.some(id => id.toString() === req.user._id.toString())
             : false;
@@ -238,7 +244,6 @@ router.post("/:id/like", async (req, res) => {
         const blog = await Blog.findById(req.params.id);
         if (!blog) return res.status(404).json({ success: false, message: "Blog not found" });
 
-        // Use .some() for correct ObjectId comparison (same fix as hasLiked above)
         const hasLiked = blog.likes.some(id => id.toString() === req.user._id.toString());
 
         if (hasLiked) {
