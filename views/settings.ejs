@@ -28,7 +28,6 @@
       gap: 1.5rem;
     }
     
-    /* Sidebar Navigation */
     .settings-sidebar {
       width: var(--sidebar-width);
       flex-shrink: 0;
@@ -89,7 +88,6 @@
       text-align: center;
     }
     
-    /* Main Content Area */
     .settings-main {
       flex: 1;
       min-width: 0;
@@ -138,7 +136,6 @@
       padding: 1.75rem;
     }
     
-    /* Activity Cards */
     .activity-option-card {
       display: flex;
       align-items: center;
@@ -202,7 +199,6 @@
       font-size: 0.875rem;
     }
     
-    /* Profile Form */
     .form-floating > .form-control,
     .form-floating > .form-select {
       border-radius: 10px;
@@ -223,7 +219,6 @@
       border: 3px solid var(--border-color);
     }
     
-    /* Toggle Switch */
     .form-switch .form-check-input {
       width: 3rem;
       height: 1.5rem;
@@ -235,7 +230,6 @@
       border-color: var(--primary-color);
     }
     
-    /* Notification Item */
     .notification-item {
       display: flex;
       align-items: center;
@@ -261,7 +255,6 @@
       font-size: 0.8rem;
     }
     
-    /* Danger Zone */
     .danger-zone {
       border: 1px solid #fecaca;
       background: #fef2f2;
@@ -281,7 +274,16 @@
       background: #4338ca;
     }
     
-    /* Responsive */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .spin {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+    
     @media (max-width: 768px) {
       .settings-wrapper {
         flex-direction: column;
@@ -297,19 +299,17 @@
 </head>
 <body>
 
-  <!-- Include your existing nav partial here -->
   <%- include('./partials/nav') %>
 
   <div class="settings-wrapper">
     
-    <!-- Sidebar -->
     <aside class="settings-sidebar">
       <div class="sidebar-card">
         <div class="sidebar-header">
           <h4><i class="bi bi-gear-wide-connected me-2"></i>Settings</h4>
           <p>Manage your account preferences</p>
         </div>
-        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist">
+        <div class="nav flex-column nav-pills">
           <button class="nav-link active" onclick="showSection('activity')" type="button">
             <i class="bi bi-activity"></i> Activity
           </button>
@@ -322,11 +322,19 @@
           <button class="nav-link" onclick="showSection('security')" type="button">
             <i class="bi bi-shield-lock"></i> Security
           </button>
+          <button class="nav-link" onclick="showSection('reading')" type="button">
+            <i class="bi bi-book"></i> Reading
+          </button>
+          <button class="nav-link" onclick="showSection('privacy')" type="button">
+            <i class="bi bi-eye-slash"></i> Privacy
+          </button>
+          <button class="nav-link" onclick="showSection('data')" type="button">
+            <i class="bi bi-download"></i> My Data
+          </button>
         </div>
       </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="settings-main">
 
       <!-- ==================== ACTIVITY SECTION ==================== -->
@@ -482,7 +490,6 @@
         </div>
         <div class="section-body">
           
-          <!-- Change Password -->
           <div class="mb-5">
             <h6 class="fw-bold mb-3">Change Password</h6>
             <form id="passwordForm" onsubmit="changePassword(event)">
@@ -514,13 +521,202 @@
             </form>
           </div>
 
-          <!-- Danger Zone -->
           <div class="danger-zone">
             <h6 class="text-danger fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Danger Zone</h6>
             <p class="text-muted mb-3">Once you delete your account, there is no going back. All your blogs, comments, and data will be permanently removed.</p>
             <button class="btn btn-outline-danger" onclick="confirmDeleteAccount()">
               <i class="bi bi-trash3 me-1"></i> Delete Account
             </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==================== READING PREFERENCES SECTION ==================== -->
+      <div class="settings-section" id="section-reading">
+        <div class="section-header">
+          <h5><i class="bi bi-book text-primary"></i> Reading Preferences</h5>
+          <p>Customize how blogs are displayed when you read them</p>
+        </div>
+        <div class="section-body">
+          
+          <div class="notification-item">
+            <div class="notification-info">
+              <h6><i class="bi bi-fonts me-2 text-secondary"></i>Large Reader Font</h6>
+              <p>Use a larger font size (18px) in blog reading view for better readability</p>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="largeReaderFont"
+                <%= user.preferences?.reading?.largeReaderFont ? 'checked' : '' %>>
+            </div>
+          </div>
+
+          <div class="notification-item">
+            <div class="notification-info">
+              <h6><i class="bi bi-layout-text-window me-2 text-secondary"></i>Focus Mode</h6>
+              <p>Hide sidebars and distractions when reading a blog</p>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="focusMode"
+                <%= user.preferences?.reading?.focusMode ? 'checked' : '' %>>
+            </div>
+          </div>
+
+          <div class="notification-item">
+            <div class="notification-info">
+              <h6><i class="bi bi-align-start me-2 text-secondary"></i>Wide Content</h6>
+              <p>Expand blog body to full width instead of the default narrow reading column</p>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="wideContent"
+                <%= user.preferences?.reading?.wideContent ? 'checked' : '' %>>
+            </div>
+          </div>
+
+          <div class="notification-item">
+            <div class="notification-info">
+              <h6><i class="bi bi-bookmarks me-2 text-secondary"></i>Auto-Save Reading List</h6>
+              <p>Automatically add blogs you spend 2+ minutes reading to a private reading history</p>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="autoSaveReading"
+                <%= user.preferences?.reading?.autoSaveReading !== false ? 'checked' : '' %>>
+            </div>
+          </div>
+
+          <div class="mt-4 text-end">
+            <button class="btn btn-primary btn-save" onclick="saveReadingPrefs()">
+              <i class="bi bi-check-lg me-1"></i> Save Preferences
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== PRIVACY SECTION ==================== -->
+      <div class="settings-section" id="section-privacy">
+        <div class="section-header">
+          <h5><i class="bi bi-eye-slash text-primary"></i> Privacy & Visibility</h5>
+          <p>Control who can see your content and interact with you</p>
+        </div>
+        <div class="section-body">
+          
+          <div class="notification-item">
+            <div class="notification-info">
+              <h6><i class="bi bi-person-lock me-2 text-warning"></i>Private Profile</h6>
+              <p>Hide your profile details, follower lists, and blog stats from non-followers</p>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="privateProfile"
+                <%= user.preferences?.privacy?.privateProfile ? 'checked' : '' %>>
+            </div>
+          </div>
+
+          <div class="notification-item">
+            <div class="notification-info">
+              <h6><i class="bi bi-person-check me-2 text-info"></i>Approve Followers</h6>
+              <p>New followers must be manually approved before they can see your private content</p>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="approveFollowers"
+                <%= user.preferences?.privacy?.approveFollowers ? 'checked' : '' %>>
+            </div>
+          </div>
+
+          <div class="notification-item">
+            <div class="notification-info">
+              <h6><i class="bi bi-chat-square-text me-2 text-success"></i>Allow Comments</h6>
+              <p>Let readers comment on your blogs. Existing comments remain visible</p>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="allowComments"
+                <%= user.preferences?.privacy?.allowComments !== false ? 'checked' : '' %>>
+            </div>
+          </div>
+
+          <div class="notification-item">
+            <div class="notification-info">
+              <h6><i class="bi bi-eye me-2 text-danger"></i>Hide Activity from Public</h6>
+              <p>Prevent non-followers from seeing your liked and commented blogs</p>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="hideActivity"
+                <%= user.preferences?.privacy?.hideActivity ? 'checked' : '' %>>
+            </div>
+          </div>
+
+          <div class="mt-4 text-end">
+            <button class="btn btn-primary btn-save" onclick="savePrivacySettings()">
+              <i class="bi bi-check-lg me-1"></i> Save Privacy Settings
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== DATA EXPORT SECTION ==================== -->
+      <div class="settings-section" id="section-data">
+        <div class="section-header">
+          <h5><i class="bi bi-download text-primary"></i> My Data</h5>
+          <p>Export or manage your personal data on Blogify</p>
+        </div>
+        <div class="section-body">
+          
+          <div class="row g-4">
+            <div class="col-md-6">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                  <div class="d-flex align-items-center mb-3">
+                    <div class="activity-icon likes" style="width:48px;height:48px;border-radius:12px;font-size:1.25rem;">
+                      <i class="bi bi-filetype-json"></i>
+                    </div>
+                    <div class="ms-3">
+                      <h6 class="mb-0 fw-bold">Export as JSON</h6>
+                      <small class="text-muted">Machine-readable format</small>
+                    </div>
+                  </div>
+                  <p class="text-muted small mb-3">Includes all your blogs, comments, likes, followers, and account metadata in a structured JSON file.</p>
+                  <button class="btn btn-outline-primary w-100" onclick="exportData('json')">
+                    <i class="bi bi-download me-1"></i> Download JSON
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                  <div class="d-flex align-items-center mb-3">
+                    <div class="activity-icon comments" style="width:48px;height:48px;border-radius:12px;font-size:1.25rem;background:#fef3c7;color:#d97706;">
+                      <i class="bi bi-file-earmark-zip"></i>
+                    </div>
+                    <div class="ms-3">
+                      <h6 class="mb-0 fw-bold">Full Archive</h6>
+                      <small class="text-muted">ZIP with images + data</small>
+                    </div>
+                  </div>
+                  <p class="text-muted small mb-3">A complete ZIP archive containing your blogs, cover images, profile photo, and a browsable HTML summary.</p>
+                  <button class="btn btn-outline-primary w-100" onclick="exportData('zip')">
+                    <i class="bi bi-download me-1"></i> Download Archive
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <div class="d-flex align-items-center justify-content-between p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
+            <div>
+              <h6 class="mb-1 fw-bold text-dark"><i class="bi bi-clock-history me-2 text-primary"></i>Last Export</h6>
+              <p class="mb-0 text-muted small" id="lastExportDate">
+                <%= user.lastExportAt ? new Date(user.lastExportAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'You haven\'t exported your data yet.' %>
+              </p>
+            </div>
+            <span class="badge bg-light text-dark border" id="exportStatus">Ready</span>
+          </div>
+
+          <div class="alert alert-light border mt-4" role="alert">
+            <i class="bi bi-info-circle me-2 text-primary"></i>
+            <small>Your data belongs to you. Exports are prepared on-demand and download links expire after 24 hours for security.</small>
           </div>
 
         </div>
@@ -533,15 +729,11 @@
   <script>
     // ==================== TAB SWITCHING ====================
     function showSection(sectionId) {
-      // Hide all sections
       document.querySelectorAll('.settings-section').forEach(section => {
         section.classList.remove('active');
       });
-      
-      // Show target section
       document.getElementById('section-' + sectionId).classList.add('active');
       
-      // Update sidebar active state
       document.querySelectorAll('.nav-link').forEach(link => {
         link.classList.remove('active');
       });
@@ -556,6 +748,23 @@
           document.getElementById('avatarPreview').src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // ==================== SHARED SAVE HELPER ====================
+    function handleSaveResponse(btn, originalText, data) {
+      if (data.success) {
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Saved!';
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-success');
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-primary');
+          btn.disabled = false;
+        }, 2000);
+      } else {
+        throw new Error(data.message);
       }
     }
 
@@ -579,20 +788,7 @@
           })
         });
         const data = await res.json();
-        
-        if (data.success) {
-          btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Saved!';
-          btn.classList.remove('btn-primary');
-          btn.classList.add('btn-success');
-          setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-primary');
-            btn.disabled = false;
-          }, 2000);
-        } else {
-          throw new Error(data.message);
-        }
+        handleSaveResponse(btn, originalText, data);
       } catch (err) {
         alert('Error: ' + err.message);
         btn.innerHTML = originalText;
@@ -600,7 +796,7 @@
       }
     }
 
-    // ==================== SAVE NOTIFICATION SETTINGS ====================
+    // ==================== NOTIFICATION SETTINGS ====================
     async function saveNotificationSettings() {
       const btn = event.target;
       const originalText = btn.innerHTML;
@@ -608,7 +804,6 @@
       btn.disabled = true;
 
       try {
-        // This assumes you'll add a PUT endpoint for notification settings
         const res = await fetch('/user/profile/notifications', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -619,20 +814,61 @@
           })
         });
         const data = await res.json();
-        
-        if (data.success) {
-          btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Saved!';
-          btn.classList.remove('btn-primary');
-          btn.classList.add('btn-success');
-          setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-primary');
-            btn.disabled = false;
-          }, 2000);
-        } else {
-          throw new Error(data.message);
-        }
+        handleSaveResponse(btn, originalText, data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // ==================== READING PREFERENCES ====================
+    async function saveReadingPrefs() {
+      const btn = event.target;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Saving...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/user/profile/reading-prefs', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            largeReaderFont: document.getElementById('largeReaderFont').checked,
+            focusMode: document.getElementById('focusMode').checked,
+            wideContent: document.getElementById('wideContent').checked,
+            autoSaveReading: document.getElementById('autoSaveReading').checked
+          })
+        });
+        const data = await res.json();
+        handleSaveResponse(btn, originalText, data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // ==================== PRIVACY SETTINGS ====================
+    async function savePrivacySettings() {
+      const btn = event.target;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Saving...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/user/profile/privacy', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            privateProfile: document.getElementById('privateProfile').checked,
+            approveFollowers: document.getElementById('approveFollowers').checked,
+            allowComments: document.getElementById('allowComments').checked,
+            hideActivity: document.getElementById('hideActivity').checked
+          })
+        });
+        const data = await res.json();
+        handleSaveResponse(btn, originalText, data);
       } catch (err) {
         alert('Error: ' + err.message);
         btn.innerHTML = originalText;
@@ -706,6 +942,60 @@
               }
             });
         }
+      }
+    }
+
+    // ==================== DATA EXPORT ====================
+    async function exportData(format) {
+      const btn = event.target;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Preparing...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`/user/profile/export?format=${format}`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success && format === 'json') {
+          // Trigger actual download for JSON
+          const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `blogify-export-${Date.now()}.json`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          
+          btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Downloaded';
+          btn.classList.remove('btn-outline-primary');
+          btn.classList.add('btn-success');
+          document.getElementById('lastExportDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          document.getElementById('exportStatus').textContent = 'Downloaded';
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+            btn.disabled = false;
+          }, 3000);
+        } else if (data.success) {
+          btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Queued';
+          btn.classList.remove('btn-outline-primary');
+          btn.classList.add('btn-success');
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+            btn.disabled = false;
+          }, 3000);
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (err) {
+        alert('Export failed: ' + err.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
       }
     }
   </script>
