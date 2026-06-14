@@ -25,7 +25,7 @@ const AdminRoute = require("./routes/Admin");
 const ProfileRoute = require("./routes/Profile");
 const CommentRoute = require("./routes/Comment");
 const FollowRoute = require("./routes/Follow");
-const NotificationRoute = require("./routes/Notification");
+const NotificationRoute = require("./routes/notification");
 const AnalyticsRoute = require("./routes/Analytics");
 const ActivityRoute = require("./routes/activity");
 
@@ -210,7 +210,7 @@ app.use("/follow", FollowRoute);
 app.use("/notifications", NotificationRoute);
 app.use("/analytics", AnalyticsRoute);
 app.use("/activity", ActivityRoute);
-app.use("/notifications", require("./routes/notification"));
+app.use("/settings", ActivityRoute);
 
 // ====================== 404 HANDLER ======================
 app.use((req, res) => {
@@ -227,4 +227,5 @@ app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`🌐 Visit http://localhost:${PORT}`);
 });
+
 module.exports = app;
