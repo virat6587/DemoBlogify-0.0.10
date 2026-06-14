@@ -109,18 +109,18 @@ app.locals.renderMarkdown = function(rawContent) {
   });
 
   contentString = contentString
-    .replace(/\\ppbr\\/pp/g, '\n\n')
-    .replace(/\\ppbr\\/ph2/g, '\n\n## ')
-    .replace(/\\ppbr\\/ph/g, '\n\n# ')
+    .replace(/\\ppbr\\\/pp/g, '\n\n')
+    .replace(/\\ppbr\\\/ph2/g, '\n\n## ')
+    .replace(/\\ppbr\\\/ph/g, '\n\n# ')
     .replace(/\\pp/g, '\n')
-    .replace(/\\h2pbr\\/pp/g, '\n## ')
-    .replace(/\\strongpbr\\/ph2/g, '\n\n## ')
-    .replace(/\\li\\/ul/g, '')
+    .replace(/\\h2pbr\\\/pp/g, '\n## ')
+    .replace(/\\strongpbr\\\/ph2/g, '\n\n## ')
+    .replace(/\\li\\\/ul/g, '')
     .replace(/\\li/g, '\n* ')
-    .replace(/pbr\\/pul/g, '\n\n')
-    .replace(/pbr\\/p/g, '\n')
-    .replace(/<<\\/strong>/g, '**')
-    .replace(/< **/g, '**');
+    .replace(/pbr\\\/pul/g, '\n\n')
+    .replace(/pbr\\\/p/g, '\n')
+    .replace(/<<\\\/strong>/g, '**')
+    .replace(/< \\*\\*/g, '**');
 
   contentString = contentString.replace(/__BLOGIFY_CODE_BLOCK_PLACEHOLDER_(\d+)__/g, (match, index) => {
     return codeBlocks[parseInt(index)];
