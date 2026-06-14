@@ -162,6 +162,9 @@
     .empty-state {
       text-align: center;
       padding: 5rem 2rem;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
     
     .empty-state i {
@@ -169,22 +172,15 @@
       color: #d1d5db;
     }
     
-    /* Delete button revealed on swipe */
-    .delete-btn {
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 120px;
-      background: #ef4444;
-      color: white;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      z-index: 3;
-      border-radius: 0 16px 16px 0;
+    /* Section headers */
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b7280;
+      margin-bottom: 0.75rem;
+      margin-top: 1.5rem;
     }
     
     @media (max-width: 576px) {
@@ -215,49 +211,50 @@
       </div>
     </div>
 
-    <!-- Follow Requests Section (if any) -->
+    <!-- Follow Requests Section -->
     <% if (grouped.follow_requests && grouped.follow_requests.length > 0) { %>
-      <div class="mb-4">
-        <h6 class="fw-bold mb-3 text-warning"><i class="bi bi-person-plus-fill me-2"></i>Follow Requests</h6>
-        <% grouped.follow_requests.forEach(notif => { %>
-          <div class="swipe-item" data-id="<%= notif._id %>">
-            <div class="swipe-bg">
-              <i class="bi bi-trash3"></i>
-            </div>
-            <div class="swipe-content">
-              <div class="notif-card">
-                <img src="<%= notif.requester?.profileImageURL || '/imgs/default.png' %>" class="notif-avatar" alt="">
-                <div class="notif-body">
-                  <div class="notif-title"><%= notif.title %></div>
-                  <div class="notif-message"><%= notif.message %></div>
-                  <div class="notif-time"><%= formatDate(notif.createdAt) %></div>
-                  <div class="request-actions">
-                    <button class="btn-accept" onclick="handleRequest('<%= notif.requester?._id %>', 'accept', '<%= notif._id %>')">
-                      <i class="bi bi-check-lg me-1"></i> Accept
-                    </button>
-                    <button class="btn-reject" onclick="handleRequest('<%= notif.requester?._id %>', 'reject', '<%= notif._id %>')">
-                      <i class="bi bi-x-lg me-1"></i> Reject
-                    </button>
-                  </div>
+      <div class="section-label text-warning"><i class="bi bi-person-plus-fill me-1"></i>Follow Requests</div>
+      <% grouped.follow_requests.forEach(notif => { %>
+        <div class="swipe-item" data-id="<%= notif._id %>">
+          <div class="swipe-bg">
+            <i class="bi bi-trash3"></i>
+          </div>
+          <div class="swipe-content">
+            <div class="notif-card">
+              <img src="<%= notif.requester?.profileImageURL || '/imgs/default.png' %>" class="notif-avatar" alt="">
+              <div class="notif-body">
+                <div class="notif-title"><%= notif.title %></div>
+                <div class="notif-message"><%= notif.message %></div>
+                <div class="notif-time"><%= formatDate(notif.createdAt) %></div>
+                <div class="request-actions">
+                  <button class="btn-accept" onclick="handleRequest('<%= notif.requester?._id %>', 'accept', '<%= notif._id %>', event)">
+                    <i class="bi bi-check-lg me-1"></i> Accept
+                  </button>
+                  <button class="btn-reject" onclick="handleRequest('<%= notif.requester?._id %>', 'reject', '<%= notif._id %>', event)">
+                    <i class="bi bi-x-lg me-1"></i> Reject
+                  </button>
                 </div>
-                <% if (!notif.isRead) { %>
-                  <div class="notif-unread"></div>
-                <% } %>
               </div>
+              <% if (!notif.isRead) { %>
+                <div class="notif-unread"></div>
+              <% } %>
             </div>
           </div>
-        <% }) %>
-      </div>
+        </div>
+      <% }) %>
     <% } %>
 
     <!-- All Notifications -->
     <% if (!notifications || notifications.length === 0) { %>
-      <div class="empty-state bg-white rounded-4 shadow-sm">
+      <div class="empty-state">
         <i class="bi bi-bell"></i>
         <h5 class="mt-3 text-muted">No notifications yet</h5>
         <p class="text-muted">When someone interacts with you, you'll see it here</p>
       </div>
     <% } else { %>
+      <% if (grouped.follow_requests && grouped.follow_requests.length > 0) { %>
+        <div class="section-label"><i class="bi bi-clock-history me-1"></i>Earlier</div>
+      <% } %>
       <div id="notificationsList">
         <% notifications.forEach(notif => { %>
           <% if (notif.type !== 'follow_request' || notif.requestStatus !== 'pending') { %>
@@ -267,7 +264,6 @@
               </div>
               <div class="swipe-content" onclick="handleNotifClick('<%= notif._id %>', '<%= notif.type %>', '<%= notif.blog?._id || notif.actor?._id %>')">
                 <div class="notif-card">
-                  <!-- Actor Avatar -->
                   <img src="<%= notif.actor?.profileImageURL || '/imgs/default.png' %>" class="notif-avatar" alt="">
                   
                   <div class="notif-body">
@@ -289,7 +285,6 @@
                     <div class="notif-time"><%= formatDate(notif.createdAt) %></div>
                   </div>
 
-                  <!-- Blog Image for new_blog -->
                   <% if (notif.type === 'new_blog' && notif.blogImageURL) { %>
                     <img src="<%= notif.blogImageURL %>" class="notif-blog-img" alt="">
                   <% } %>
@@ -322,7 +317,7 @@
         startX = e.touches[0].clientX;
         isDragging = true;
         content.style.transition = 'none';
-      });
+      }, { passive: true });
 
       content.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
@@ -330,14 +325,13 @@
         if (currentX < 0) {
           content.style.transform = `translateX(${currentX}px)`;
         }
-      });
+      }, { passive: true });
 
       content.addEventListener('touchend', () => {
         isDragging = false;
         content.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         if (currentX < threshold) {
           content.style.transform = 'translateX(-120px)';
-          // Show delete confirmation after swipe
           setTimeout(() => {
             if (confirm('Delete this notification?')) {
               deleteNotification(item.dataset.id);
@@ -351,7 +345,7 @@
         currentX = 0;
       });
 
-      // Mouse events (for desktop testing)
+      // Mouse events
       content.addEventListener('mousedown', (e) => {
         startX = e.clientX;
         isDragging = true;
@@ -394,10 +388,8 @@
 
     // ==================== HANDLE NOTIFICATION CLICK ====================
     async function handleNotifClick(notifId, type, targetId) {
-      // Mark as read
       await fetch(`/notifications/${notifId}/read`, { method: 'PUT' });
 
-      // Navigate based on type
       switch (type) {
         case 'like':
         case 'comment':
@@ -416,13 +408,12 @@
     }
 
     // ==================== HANDLE FOLLOW REQUEST ====================
-    async function handleRequest(userId, action, notifId) {
+    async function handleRequest(userId, action, notifId, event) {
       event.stopPropagation();
       try {
         const res = await fetch(`/follow/${userId}/${action}`, { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-          // Delete the notification after handling
           await deleteNotification(notifId, false);
           window.location.reload();
         } else {
@@ -434,8 +425,8 @@
     }
 
     // ==================== DELETE NOTIFICATION ====================
-    async function deleteNotification(notifId, confirm = true) {
-      if (confirm && !window.confirm('Delete this notification?')) return;
+    async function deleteNotification(notifId, confirmDialog = true) {
+      if (confirmDialog && !window.confirm('Delete this notification?')) return;
       
       try {
         const res = await fetch(`/notifications/${notifId}`, { method: 'DELETE' });
@@ -459,7 +450,6 @@
       try {
         await fetch('/notifications/all/read', { method: 'PUT' });
         document.querySelectorAll('.notif-unread').forEach(el => el.remove());
-        alert('All notifications marked as read');
       } catch (err) {
         alert('Error: ' + err.message);
       }
