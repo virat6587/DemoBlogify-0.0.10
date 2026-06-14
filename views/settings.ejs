@@ -274,6 +274,22 @@
       background: #4338ca;
     }
     
+    .privacy-card {
+      border: 2px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: all 0.2s;
+    }
+    
+    .privacy-card:hover {
+      border-color: var(--primary-color);
+    }
+    
+    .privacy-toggle {
+      width: 3.5rem !important;
+      height: 1.75rem !important;
+    }
+    
     @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
@@ -318,6 +334,9 @@
           </button>
           <button class="nav-link" onclick="showSection('notifications')" type="button">
             <i class="bi bi-bell"></i> Notifications
+          </button>
+          <button class="nav-link" onclick="showSection('privacy-account')" type="button">
+            <i class="bi bi-shield-lock"></i> Account Privacy
           </button>
           <button class="nav-link" onclick="showSection('security')" type="button">
             <i class="bi bi-shield-lock"></i> Security
@@ -477,6 +496,46 @@
           <div class="mt-4 text-end">
             <button class="btn btn-primary btn-save" onclick="saveNotificationSettings()">
               <i class="bi bi-check-lg me-1"></i> Save Preferences
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ACCOUNT PRIVACY SECTION ==================== -->
+      <div class="settings-section" id="section-privacy-account">
+        <div class="section-header">
+          <h5><i class="bi bi-shield-lock text-primary"></i> Account Privacy</h5>
+          <p>Control who can see your content and follow you</p>
+        </div>
+        <div class="section-body">
+          
+          <div class="privacy-card mb-4">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <h6 class="fw-bold mb-1">Private Account</h6>
+                <p class="text-muted mb-0 small">
+                  When enabled, only approved followers can see your blogs, likes, and follower lists. 
+                  Others will see only your profile picture, name, and follower counts.
+                </p>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input privacy-toggle" type="checkbox" id="isPrivateToggle" 
+                  <%= user.isPrivate ? 'checked' : '' %>>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-light border" id="privacyStatusAlert">
+            <i class="bi bi-info-circle me-2 text-primary"></i>
+            <small id="privacyStatusText">
+              Your account is currently <strong><%= user.isPrivate ? 'Private' : 'Public' %></strong>. 
+              <%= user.isPrivate ? 'New followers require your approval.' : 'Anyone can follow you and view your blogs.' %>
+            </small>
+          </div>
+
+          <div class="mt-4 text-end">
+            <button class="btn btn-primary btn-save" onclick="saveAccountPrivacy()">
+              <i class="bi bi-check-lg me-1"></i> Save Privacy Setting
             </button>
           </div>
         </div>
@@ -822,6 +881,37 @@
       }
     }
 
+    // ==================== ACCOUNT PRIVACY ====================
+    async function saveAccountPrivacy() {
+      const btn = event.target;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Saving...';
+      btn.disabled = true;
+
+      try {
+        const isPrivate = document.getElementById('isPrivateToggle').checked;
+        const res = await fetch('/user/profile/privacy/account', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isPrivate })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          document.getElementById('privacyStatusText').innerHTML = 
+            `Your account is currently <strong>${isPrivate ? 'Private' : 'Public'}</strong>. 
+             ${isPrivate ? 'New followers require your approval.' : 'Anyone can follow you and view your blogs.'}`;
+          handleSaveResponse(btn, originalText, data);
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
     // ==================== READING PREFERENCES ====================
     async function saveReadingPrefs() {
       const btn = event.target;
@@ -957,7 +1047,6 @@
         const data = await res.json();
         
         if (data.success && format === 'json') {
-          // Trigger actual download for JSON
           const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
