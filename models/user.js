@@ -57,14 +57,14 @@ const UserSchema = new Schema({
     default: false
   },
 
-  // ====================== SOCIAL FEATURES (Refactored) ======================
+  // ====================== SOCIAL FEATURES ======================
   // Users this person follows (accepted)
   following: [{
     type: Schema.Types.ObjectId,
     ref: "user"
   }],
 
-  // Users who follow this person (accepted) — kept as followers for backward compat
+  // Users who follow this person (accepted)
   followers: [{
     type: Schema.Types.ObjectId,
     ref: "user"
@@ -210,7 +210,7 @@ UserSchema.static("findOrCreateGoogleUser", async function (profile) {
   }
 });
 
-// ====================== FOLLOW METHODS (Updated for Privacy) ======================
+// ====================== FOLLOW METHODS (Privacy-Aware) ======================
 
 // Check if following (accepted)
 UserSchema.methods.isFollowing = function(userId) {
